@@ -25,6 +25,10 @@ export const Colors = {
     navbarCenterButton: '#007AFF',
     navbarCenterButtonActive: '#0051D0',
     navbarShadow: '#000',
+    textSecondary: '#6B7280',
+    accent: '#10B981',
+    card: '#FFFFFF',
+    shadow: 'rgba(0, 0, 0, 0.1)',
   },
   dark: {
     text: '#ECEDEE',
@@ -49,5 +53,9 @@ export const Colors = {
     navbarCenterButton: '#007AFF',
     navbarCenterButtonActive: '#0040dd',
     navbarShadow: '#000',
+    textSecondary: '#9CA3AF',
+    accent: '#10B981',
+    card: '#1F2937',
+    shadow: 'rgba(0, 0, 0, 0.3)',
   },
 };
