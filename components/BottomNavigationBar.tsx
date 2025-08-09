@@ -86,7 +86,7 @@ export default function BottomNavigationBar({ activeIndex = 0, onTabPress }: { a
             <MaterialCommunityIcons
               name={icon}
               size={26}
-              color={isActive ? Colors.light.primary : '#999'}
+              color={isActive ? Colors.light.navbarTabActive : Colors.light.navbarTabInactive}
               style={[styles.icon, isActive && styles.activeIcon]}
             />
           </TouchableOpacity>
@@ -99,16 +99,16 @@ export default function BottomNavigationBar({ activeIndex = 0, onTabPress }: { a
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
+    backgroundColor: Colors.light.navbarBackground,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    shadowColor: '#000',
+    shadowColor: Colors.light.navbarShadow,
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 12,
-    paddingBottom: 20, // 16에서 20으로 증가
-    paddingTop: 12, // 8에서 12로 증가
+    paddingBottom: 20,
+    paddingTop: 12,
     paddingHorizontal: 8,
     alignItems: 'center',
     justifyContent: 'space-around',
@@ -117,17 +117,17 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10, // 8에서 10으로 증가
+    paddingVertical: 10,
     paddingHorizontal: 8,
     borderRadius: 20,
     marginHorizontal: 2,
   },
   activeTab: {
-    backgroundColor: 'rgba(37, 99, 235, 0.12)', // 투명도 조금 증가
-    transform: [{ scale: 1.02 }], // 선택된 탭 살짝 확대
+    backgroundColor: Colors.light.navbarTabActiveBg,
+    transform: [{ scale: 1.02 }],
   },
   icon: {
-    marginBottom: 6, // 아이콘과 점 사이 간격 증가
+    marginBottom: 6,
   },
   activeIcon: {
     // 추가 스타일 없음
@@ -136,25 +136,25 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 8, // 좌우 패딩 추가하여 다른 탭과 일관성
+    paddingHorizontal: 8,
   },
   centerCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: '#007AFF', // iOS 스타일 파란색
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: Colors.light.navbarCenterButton,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#007AFF',
+    shadowColor: Colors.light.navbarCenterButton,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 16,
     elevation: 12,
     position: 'absolute',
-    top: -50, // -40에서 -24로 조정하여 적절한 높이로
+    top: -48,
   },
   centerCircleActive: {
-    backgroundColor: '#0051D0', // 더 진한 파란색
+    backgroundColor: Colors.light.navbarCenterButtonActive,
     transform: [{ scale: 1.05 }],
     shadowOpacity: 0.4,
   },

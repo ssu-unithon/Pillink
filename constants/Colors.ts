@@ -17,6 +17,15 @@ export const Colors = {
     mediumGray: '#999',
     darkGray: '#666',
     border: '#ddd',
+
+    // 네비게이션 바
+    navbarBackground: '#fff',
+    navbarTabInactive: '#999',
+    navbarTabActive: '#007aff',
+    navbarTabActiveBg: 'rgba(37, 99, 235, 0.12)',
+    navbarCenterButton: '#007AFF',
+    navbarCenterButtonActive: '#0051D0',
+    navbarShadow: '#000',
   },
   dark: {
     text: '#ECEDEE',
@@ -33,5 +42,13 @@ export const Colors = {
     mediumGray: '#666',
     darkGray: '#999',
     border: '#555',
+    // 네비게이션 바 관련 색상 추가 (다크 모드)
+    navbarBackground: '#1c1c1e',
+    navbarTabInactive: '#8e8e93',
+    navbarTabActive: '#007aff',
+    navbarTabActiveBg: 'rgba(0, 122, 255, 0.15)',
+    navbarCenterButton: '#007AFF',
+    navbarCenterButtonActive: '#0040dd',
+    navbarShadow: '#000',
   },
 };
