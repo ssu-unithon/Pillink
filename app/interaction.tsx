@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Colors } from '../constants/Colors';
 import SearchBar from '../components/SearchBar';
 import CircularGauge from '../components/CircularGauge';
@@ -7,9 +7,13 @@ import InteractionRiskGroups from '../components/InteractionRiskGroups';
 import BottomNavigationBar from '../components/BottomNavigationBar';
 
 export default function InteractionScreen() {
-  const [modalVisible, setModalVisible] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<{type: string, title: string, description: string} | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<'duplicate' | 'risk' | 'safe' | null>(null);
+
+  // 그룹 버튼 클릭 핸들러 (모달 없이 단순 선택만)
+  const handleGroupPress = (groupType: 'duplicate' | 'risk' | 'safe') => {
+    const newSelection = selectedGroup === groupType ? null : groupType;
+    setSelectedGroup(newSelection);
+  };
 
   // 각 그룹별 데이터
   const groupData = {
@@ -22,23 +26,6 @@ export default function InteractionScreen() {
     safe: [
       { name: '비타민 D + 칼슘', description: '뼈 건강 증진 효과', type: '안전' },
     ],
-  };
-
-  // 그룹 버튼 클릭 핸들러
-  const handleGroupPress = (groupType: 'duplicate' | 'risk' | 'safe') => {
-    setSelectedGroup(selectedGroup === groupType ? null : groupType);
-  };
-
-  // 모달 열기 함수
-  const handleItemPress = (type: string, title: string, description: string) => {
-    setSelectedItem({ type, title, description });
-    setModalVisible(true);
-  };
-
-  // 모달 닫기 함수
-  const closeModal = () => {
-    setModalVisible(false);
-    setSelectedItem(null);
   };
 
   return (
@@ -72,34 +59,37 @@ export default function InteractionScreen() {
         </View>
 
         {/* 경고 문구 */}
-        <View style={styles.warningContainer}>
+        <View style={styles.warningContainer} accessible={true} accessibilityRole="alert">
           <Text style={styles.warningText}>
             현재 약물 상호작용 위험 점수가 높습니다.{'\n'}반드시 의사, 약사와 상담하여 약물 변경 또는 사용 중단 여부를 결정하세요.
           </Text>
         </View>
 
         {/* 선택된 그룹의 상세 정보 */}
-        {selectedGroup && (
+        {selectedGroup ? (
           <View style={styles.selectedGroupSection}>
-            <Text style={styles.selectedGroupTitle}>
-              {selectedGroup === 'duplicate' ? '중복 약물' :
-               selectedGroup === 'risk' ? '위험한 상호작용' :
-               '안전한 조합'}
-            </Text>
+            <View style={styles.selectedGroupHeader}>
+              <Text style={styles.selectedGroupTitle}>
+                {selectedGroup === 'duplicate' ? '🔄 중복 약물' :
+                 selectedGroup === 'risk' ? '⚠️ 위험한 상호작용' :
+                 '✅ 안전한 조합'}
+              </Text>
+              <Text style={styles.selectedGroupSubtitle}>
+                {selectedGroup === 'duplicate' ? '동일한 효과를 가진 약물들' :
+                 selectedGroup === 'risk' ? '주의가 필요한 약물 조합' :
+                 '함께 복용해도 안전한 약물들'}
+              </Text>
+            </View>
 
             {groupData[selectedGroup].map((item, index) => (
-              <TouchableOpacity
+              <View
                 key={index}
-                style={styles.medicationItem}
-                onPress={() => handleItemPress(item.type, item.name,
-                  selectedGroup === 'duplicate' ? '동일한 효과를 가진 약물이 중복 처방되었습니다.' :
-                  selectedGroup === 'risk' ? '이 약물 조합은 위험한 부작용을 일으킬 수 있습니다.' :
-                  '이 약물 조합은 안전하며 서로 효과를 증진시킵니다.'
-                )}
+                style={[styles.medicationItem, styles.medicationItemEnhanced]}
               >
                 <View style={styles.medicationInfo}>
                   <Text style={styles.medicationName}>{item.name}</Text>
                   <Text style={styles.medicationDescription}>{item.description}</Text>
+                  <Text style={styles.tapHint}>탭하여 자세히 보기</Text>
                 </View>
                 <View style={[
                   styles.riskBadge,
@@ -120,65 +110,19 @@ export default function InteractionScreen() {
                     {item.type}
                   </Text>
                 </View>
-              </TouchableOpacity>
+              </View>
             ))}
+          </View>
+        ) : (
+          <View style={styles.emptyStateContainer}>
+            <Text style={styles.emptyStateIcon}>💊</Text>
+            <Text style={styles.emptyStateTitle}>카테고리를 선택하세요</Text>
+            <Text style={styles.emptyStateDescription}>
+              위의 중복, 위험, 안전 카테고리 중 하나를 선택하여{'\n'}약물 상호작용 정보를 확인하세요
+            </Text>
           </View>
         )}
       </ScrollView>
-
-      {/* 모달 */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={closeModal}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{selectedItem?.title}</Text>
-              <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
-                <Text style={styles.closeButtonText}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.modalBody}>
-              <View style={[
-                styles.modalBadge,
-                { backgroundColor:
-                  selectedItem?.type === '중복' ? Colors.light.primaryLight :
-                  selectedItem?.type === '위험' ? Colors.light.dangerLight :
-                  Colors.light.secondaryLight
-                }
-              ]}>
-                <Text style={[
-                  styles.modalBadgeText,
-                  { color:
-                    selectedItem?.type === '중복' ? Colors.light.primary :
-                    selectedItem?.type === '위험' ? Colors.light.danger :
-                    Colors.light.secondary
-                  }
-                ]}>
-                  {selectedItem?.type}
-                </Text>
-              </View>
-
-              <Text style={styles.modalDescription}>
-                {selectedItem?.description}
-              </Text>
-
-              <View style={styles.modalActions}>
-                <TouchableOpacity style={styles.actionButton} onPress={closeModal}>
-                  <Text style={styles.actionButtonText}>의사와 상담하기</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.actionButton, styles.secondaryButton]} onPress={closeModal}>
-                  <Text style={[styles.actionButtonText, styles.secondaryButtonText]}>나중에 확인</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </View>
-      </Modal>
 
       <BottomNavigationBar activeIndex={1} />
     </View>
@@ -253,6 +197,10 @@ const styles = StyleSheet.create({
     elevation: 2,
     marginBottom: 8,
   },
+  medicationItemEnhanced: {
+    // 애니메이션을 위한 스타일 추가
+    transform: [{ scale: 1 }],
+  },
   medicationInfo: {
     flex: 1,
   },
@@ -265,6 +213,11 @@ const styles = StyleSheet.create({
   medicationDescription: {
     fontSize: 14,
     color: Colors.light.mediumGray,
+  },
+  tapHint: {
+    fontSize: 12,
+    color: Colors.light.secondary,
+    marginTop: 4,
   },
   riskBadge: {
     paddingHorizontal: 12,
@@ -355,11 +308,19 @@ const styles = StyleSheet.create({
   selectedGroupSection: {
     marginBottom: 32,
   },
+  selectedGroupHeader: {
+    marginBottom: 16,
+  },
   selectedGroupTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: Colors.light.text,
-    marginBottom: 16,
+    marginBottom: 4,
+  },
+  selectedGroupSubtitle: {
+    fontSize: 14,
+    color: Colors.light.mediumGray,
+    fontWeight: '400',
   },
   warningContainer: {
     backgroundColor: '#FFCCCC',
@@ -367,10 +328,35 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 24,
   },
+  warningIcon: {
+    fontSize: 16,
+    color: '#D8000C',
+    marginBottom: 4,
+  },
   warningText: {
     color: '#D8000C',
     fontSize: 14,
     fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  emptyStateContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  emptyStateIcon: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  emptyStateTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: Colors.light.text,
+    marginBottom: 8,
+  },
+  emptyStateDescription: {
+    fontSize: 14,
+    color: Colors.light.mediumGray,
     textAlign: 'center',
   },
 });
