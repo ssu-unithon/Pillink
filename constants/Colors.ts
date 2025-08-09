@@ -17,8 +17,7 @@ export const Colors = {
     mediumGray: '#999',
     darkGray: '#666',
     border: '#ddd',
-
-    // 네비게이션 바
+    // 네비게이션 바 관련 색상 추가
     navbarBackground: '#fff',
     navbarTabInactive: '#999',
     navbarTabActive: '#007aff',
