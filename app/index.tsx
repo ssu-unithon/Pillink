@@ -9,25 +9,33 @@ import SearchBar from '../components/SearchBar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
+// Module-level variable to track if animation has run once per session
+let hasAnimatedOnce = false;
+
 // Animated component for staggered entrance
-const AnimatedSection = ({ children, index }: { children: React.ReactNode, index: number }) => {
+const AnimatedSection = ({ children, index, shouldAnimate }: { children: React.ReactNode, index: number, shouldAnimate: boolean }) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(30)).current;
 
     useEffect(() => {
-        Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 600,
-            delay: index * 150,
-            useNativeDriver: true,
-        }).start();
-        Animated.timing(slideAnim, {
-            toValue: 0,
-            duration: 600,
-            delay: index * 150,
-            useNativeDriver: true,
-        }).start();
-    }, [fadeAnim, slideAnim, index]);
+        if (shouldAnimate) {
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 600,
+                delay: index * 150,
+                useNativeDriver: true,
+            }).start();
+            Animated.timing(slideAnim, {
+                toValue: 0,
+                duration: 600,
+                delay: index * 150,
+                useNativeDriver: true,
+            }).start();
+        } else {
+            fadeAnim.setValue(1);
+            slideAnim.setValue(0);
+        }
+    }, [shouldAnimate, index]);
 
     return (
         <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
@@ -38,6 +46,14 @@ const AnimatedSection = ({ children, index }: { children: React.ReactNode, index
 
 export default function Index() {
   const insets = useSafeAreaInsets();
+
+  // This effect runs only once when the component mounts for the first time in the app session.
+  // It sets the flag to true, so subsequent mounts/re-renders won't trigger the animation.
+  useEffect(() => {
+    if (!hasAnimatedOnce) {
+        hasAnimatedOnce = true;
+    }
+  }, []);
 
   const onQuickActionPress = (action: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -53,7 +69,7 @@ export default function Index() {
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <AnimatedSection index={0}>
+        <AnimatedSection index={0} shouldAnimate={!hasAnimatedOnce}>
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>PillLink</Text>
                 <View style={styles.headerIcons}>
@@ -63,12 +79,12 @@ export default function Index() {
         </AnimatedSection>
 
         {/* Search Bar */}
-        <AnimatedSection index={1}>
+        <AnimatedSection index={1} shouldAnimate={!hasAnimatedOnce}>
             <SearchBar />
         </AnimatedSection>
 
         {/* Greeting Text */}
-        <AnimatedSection index={2}>
+        <AnimatedSection index={2} shouldAnimate={!hasAnimatedOnce}>
             <View style={styles.greetingContainer}>
             <Text style={styles.greetingText}>
                 안녕하세요, <Text style={styles.greetingHighlight}>유은정님!</Text>
@@ -80,7 +96,7 @@ export default function Index() {
         </AnimatedSection>
 
         {/* Quick Actions */}
-        <AnimatedSection index={3}>
+        <AnimatedSection index={3} shouldAnimate={!hasAnimatedOnce}>
             <View style={styles.quickActionsContainer}>
                 <TouchableOpacity style={styles.quickActionCard} onPress={() => onQuickActionPress('History')} activeOpacity={0.8}>
                     <Text style={styles.quickActionIcon}>💊</Text>
@@ -98,12 +114,12 @@ export default function Index() {
         </AnimatedSection>
 
         {/* Calendar Section */}
-        <AnimatedSection index={4}>
+        <AnimatedSection index={4} shouldAnimate={!hasAnimatedOnce}>
             <CalendarComponent />
         </AnimatedSection>
 
         {/* Interaction Risk Section */}
-        <AnimatedSection index={5}>
+        <AnimatedSection index={5} shouldAnimate={!hasAnimatedOnce}>
             <View style={styles.sectionContainer}>
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>상호작용 안전도</Text>
@@ -123,7 +139,7 @@ export default function Index() {
         </AnimatedSection>
 
         {/* Health News Section */}
-        <AnimatedSection index={6}>
+        <AnimatedSection index={6} shouldAnimate={!hasAnimatedOnce}>
             <View style={styles.sectionContainer}>
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>건강 뉴스</Text>
