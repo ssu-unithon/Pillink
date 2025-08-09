@@ -425,6 +425,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     paddingHorizontal: 16,
+    paddingTop: 12,        // 상단 여백 추가
+    paddingBottom: 12,     // 하단 여백 고정
     gap: 12,
   },
   inputWrapperFocused: {
