@@ -21,12 +21,13 @@ export default function CircularGauge({
   pieGradientColors = ['#BD0000', '#FF8282'], // Default gradient colors
   centerCircleColor = Colors.light.background, // Default white
   percentageTextColor = Colors.light.text, // Default dark text
-  percentageTextSize = 20, // Default font size
+  percentageTextSize, // 기본값 제거 - 크기에 비례하여 계산
   percentageTextWeight = 'bold', // Default font weight
 }: CircularGaugeProps) {
   // 게이지의 중심과 반지름 계산
   const center = size / 2;
   const radius = center - strokeWidth / 2;
+  const calculatedTextSize = percentageTextSize || (size * 0.18); // size의 18%로 계산
 
   // 파이 모양 게이지를 위한 각도 계산
   const startAngle = -90;
@@ -92,9 +93,9 @@ export default function CircularGauge({
         elevation: 12,
       }}>
         <Text style={{
-          fontSize: percentageTextSize,
-          fontWeight: percentageTextWeight,
-          color: percentageTextColor,
+          fontSize: calculatedTextSize,
+          fontWeight: 'bold',
+          color: '#222',
         }}>{percentage}</Text>
       </View>
     </View>
