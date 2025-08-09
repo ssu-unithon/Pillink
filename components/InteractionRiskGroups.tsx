@@ -42,48 +42,50 @@ const InteractionRiskGroups = ({ onGroupPress, interactable = false, selectedGro
   ];
 
   return (
-    <View style={styles.groupsContainer}>
-      {groups.map(({ key, title, count, pillBg, pillColor, activeBg, activeTextColor }) => {
-        const countValue = parseInt(count);
-        const isClickable = interactable && countValue > 0;
-        const isSelected = selectedGroup === key;
-        const isInactive = selectedGroup && selectedGroup !== key;
+    <View>
+      <View style={styles.groupsContainer}>
+        {groups.map(({ key, title, count, pillBg, pillColor, activeBg, activeTextColor }) => {
+          const countValue = parseInt(count);
+          const isClickable = interactable && countValue > 0;
+          const isSelected = selectedGroup === key;
+          const isInactive = selectedGroup && selectedGroup !== key;
 
-        const CardComponent = isClickable ? TouchableOpacity : View;
+          const CardComponent = isClickable ? TouchableOpacity : View;
 
-        return (
-          <CardComponent
-            key={key}
-            style={[
-              styles.groupCard,
-              isClickable && styles.clickableCard,
-              isSelected && { backgroundColor: activeBg },
-              isInactive && { opacity: 0.4 },
-            ]}
-            onPress={isClickable ? () => onGroupPress?.(key) : undefined}
-            activeOpacity={isClickable ? 0.8 : 1}
-          >
-            <View style={[
-              styles.pill,
-              { backgroundColor: isSelected ? activeTextColor : pillBg }
-            ]}>
-              <Text style={[
-                styles.pillText,
-                { color: isSelected ? activeBg : pillColor }
+          return (
+            <CardComponent
+              key={key}
+              style={[
+                styles.groupCard,
+                isClickable && styles.clickableCard,
+                isSelected && { backgroundColor: activeBg },
+                isInactive && { opacity: 0.4 },
+              ]}
+              onPress={isClickable ? () => onGroupPress?.(key) : undefined}
+              activeOpacity={isClickable ? 0.8 : 1}
+            >
+              <View style={[
+                styles.pill,
+                { backgroundColor: isSelected ? activeTextColor : pillBg }
               ]}>
-                {title}
+                <Text style={[
+                  styles.pillText,
+                  { color: isSelected ? activeBg : pillColor }
+                ]}>
+                  {title}
+                </Text>
+              </View>
+              <Text style={[
+                styles.groupCount,
+                !isClickable && countValue === 0 && styles.disabledCount,
+                { color: isSelected ? '#fff' : '#222' }
+              ]}>
+                {count}
               </Text>
-            </View>
-            <Text style={[
-              styles.groupCount,
-              !isClickable && countValue === 0 && styles.disabledCount,
-              { color: isSelected ? '#fff' : '#222' }
-            ]}>
-              {count}
-            </Text>
-          </CardComponent>
-        );
-      })}
+            </CardComponent>
+          );
+        })}
+      </View>
     </View>
   );
 };
