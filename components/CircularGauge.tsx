@@ -1,28 +1,35 @@
 import React from "react";
-import { View, Text, StyleSheet, Platform } from "react-native";
-import Svg, { Circle, Defs, Stop, LinearGradient, Path } from "react-native-svg";
-import { Colors } from '../constants/Colors';
+import { View, Text, StyleSheet } from "react-native";
+import Svg, { Defs, Stop, LinearGradient, Path } from "react-native-svg";
+import { Colors } from '@/constants/Colors';
 
 interface CircularGaugeProps {
   percentage: number;
   size?: number;
   strokeWidth?: number;
+  pieGradientColors?: string[];
+  centerCircleColor?: string;
+  percentageTextColor?: string;
+  percentageTextSize?: number;
+  percentageTextWeight?: 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
 }
 
 export default function CircularGauge({
   percentage,
   size = 72,
   strokeWidth = 12,
+  pieGradientColors = ['#BD0000', '#FF8282'], // Default gradient colors
+  centerCircleColor = Colors.light.background, // Default white
+  percentageTextColor = Colors.light.text, // Default dark text
+  percentageTextSize = 20, // Default font size
+  percentageTextWeight = 'bold', // Default font weight
 }: CircularGaugeProps) {
   // 게이지의 중심과 반지름 계산
   const center = size / 2;
   const radius = center - strokeWidth / 2;
-  const circumference = 2 * Math.PI * radius;
-  const progress = (circumference * percentage) / 100;
 
-  // 파이(피자) 모양 게이지를 위한 각도 계산
+  // 파이 모양 게이지를 위한 각도 계산
   const startAngle = -90;
-  const endAngle = startAngle + (percentage / 100) * 360;
   const radians = (deg: number) => (deg * Math.PI) / 180;
   const describeArc = (cx: number, cy: number, r: number, startAngle: number, endAngle: number) => {
     const start = {
@@ -41,30 +48,33 @@ export default function CircularGauge({
       "Z",
     ].join(" ");
   };
+  const endAngle = startAngle + (percentage / 100) * 360;
   const piePath = describeArc(center, center, radius, startAngle, endAngle);
+  const bgPath = describeArc(center, center, radius, endAngle, startAngle + 360);
 
   return (
     <View style={[styles.container, { width: size, height: size, borderRadius: size / 2 }]}>
-      {/* LinearGradient 제거: 배경 그라데이션은 필요 없음 */}
       <Svg width={size} height={size} style={{ position: 'absolute' }}>
         <Defs>
-          <LinearGradient id="strokeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <Stop offset="0%" stopColor="#BD0000" />
-            <Stop offset="100%" stopColor="#FF8282" />
+          {/* 그라데이션 설정 */}
+          <LinearGradient id="strokeGradient" x1="50%" y1="100%" x2="50%" y2="0%">
+            {pieGradientColors.map((color, index) => (
+              <Stop key={index} offset={`${(index / (pieGradientColors.length - 1)) * 100}%`} stopColor={color} />
+            ))}
           </LinearGradient>
         </Defs>
-        {/* 파이(피자) 모양 게이지 */}
+        {/* 회색 부분 */}
+        <Path
+          d={bgPath}
+          fill="#EFEFEF"
+        />
+        {/* 파이 모양 게이지 */}
         <Path
           d={piePath}
           fill="url(#strokeGradient)"
-          // 그림자 효과를 파이 조각에 적용
-          shadowColor="#000"
-          shadowOffset={{ width: 0, height: 4 }}
-          shadowOpacity={0.22}
-          shadowRadius={12}
         />
       </Svg>
-      {/* 중앙 흰색 원(항상 위에 뜨도록) */}
+      {/* 중앙 흰색 원 */}
       <View style={{
         position: 'absolute',
         width: size * 0.6,
@@ -72,16 +82,20 @@ export default function CircularGauge({
         left: size * 0.2,
         top: size * 0.2,
         borderRadius: size * 0.3,
-        backgroundColor: '#fff',
+        backgroundColor: centerCircleColor,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#000',
+        shadowColor: Colors.light.text,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.22,
         shadowRadius: 12,
         elevation: 12,
       }}>
-        <Text style={{ fontSize: size * 0.18, fontWeight: 'bold', color: '#222' }}>{percentage}</Text>
+        <Text style={{
+          fontSize: percentageTextSize,
+          fontWeight: percentageTextWeight,
+          color: percentageTextColor,
+        }}>{percentage}</Text>
       </View>
     </View>
   );
