@@ -1,43 +1,91 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Colors } from '@/constants/Colors';
 
-const InteractionRiskGroups = () => {
+interface InteractionRiskGroupsProps {
+  onGroupPress?: (groupType: 'duplicate' | 'risk' | 'safe') => void;
+  interactable?: boolean;
+  selectedGroup?: 'duplicate' | 'risk' | 'safe' | null;
+}
+
+const InteractionRiskGroups = ({ onGroupPress, interactable = false, selectedGroup = null }: InteractionRiskGroupsProps) => {
   // Card data configuration
   // Order: 중복, 위험, 안전
   const groups = [
     {
-      key: 'duplicate',
+      key: 'duplicate' as const,
       title: '중복',
       count: '0건',
       pillBg: Colors.light.primaryLight,
       pillColor: Colors.light.primary,
+      activeBg: '#6666FF',
+      activeTextColor: '#E6E6FF',
     },
     {
-      key: 'risk',
+      key: 'risk' as const,
       title: '위험',
-      count: '0건',
+      count: '1건',
       pillBg: Colors.light.dangerLight,
       pillColor: Colors.light.danger,
+      activeBg: '#FF5050',
+      activeTextColor: '#FFD9D9',
     },
     {
-      key: 'safe',
+      key: 'safe' as const,
       title: '안전',
-      count: '0건',
+      count: '1건',
       pillBg: Colors.light.secondaryLight,
       pillColor: Colors.light.secondary,
+      activeBg: '#2DB67D',
+      activeTextColor: '#D9F2E6',
     },
   ];
+
   return (
-    <View style={styles.groupsContainer}>
-      {groups.map(({ key, title, count, pillBg, pillColor }) => (
-        <View key={key} style={styles.groupCard}>
-          <View style={[styles.pill, { backgroundColor: pillBg }]}>
-            <Text style={[styles.pillText, { color: pillColor }]}>{title}</Text>
-          </View>
-          <Text style={styles.groupCount}>{count}</Text>
-        </View>
-      ))}
+    <View>
+      <View style={styles.groupsContainer}>
+        {groups.map(({ key, title, count, pillBg, pillColor, activeBg, activeTextColor }) => {
+          const countValue = parseInt(count);
+          const isClickable = interactable && countValue > 0;
+          const isSelected = selectedGroup === key;
+          const isInactive = selectedGroup && selectedGroup !== key;
+
+          const CardComponent = isClickable ? TouchableOpacity : View;
+
+          return (
+            <CardComponent
+              key={key}
+              style={[
+                styles.groupCard,
+                isClickable && styles.clickableCard,
+                isSelected && { backgroundColor: activeBg },
+                isInactive && { opacity: 0.4 },
+              ]}
+              onPress={isClickable ? () => onGroupPress?.(key) : undefined}
+              activeOpacity={isClickable ? 0.8 : 1}
+            >
+              <View style={[
+                styles.pill,
+                { backgroundColor: isSelected ? activeTextColor : pillBg }
+              ]}>
+                <Text style={[
+                  styles.pillText,
+                  { color: isSelected ? activeBg : pillColor }
+                ]}>
+                  {title}
+                </Text>
+              </View>
+              <Text style={[
+                styles.groupCount,
+                !isClickable && countValue === 0 && styles.disabledCount,
+                { color: isSelected ? '#fff' : '#222' }
+              ]}>
+                {count}
+              </Text>
+            </CardComponent>
+          );
+        })}
+      </View>
     </View>
   );
 };
@@ -63,6 +111,10 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
+  clickableCard: {
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
   pill: {
     borderRadius: 999,
     paddingHorizontal: 16,
@@ -81,6 +133,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#222',
     marginTop: 2,
+  },
+  disabledCount: {
+    color: '#999',
   },
 });
 
