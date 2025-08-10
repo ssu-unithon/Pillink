@@ -20,22 +20,25 @@ export default function BottomNavigationBar({ activeIndex = 0, onTabPress }: { a
   const handleTabPress = async (idx: number) => {
     if (onTabPress) onTabPress(idx);
 
+    // 현재 ��성 탭과 같은 탭을 누르면 아무것도 하지 않음
+    if (activeIndex === idx) return;
+
     // 라우팅 로직
     switch (idx) {
       case 0:
-        router.push('/');
+        router.replace('/');
         break;
       case 1:
-        router.push('/interaction');
+        router.replace('/interaction');
         break;
       case 2:
-        // router.push('/add');
+        // router.replace('/add');
         break;
       case 3:
-        router.push('/chat');
+        router.replace('/chat');
         break;
       case 4:
-        router.push('/myinfo');
+        router.replace('/myinfo');
         break;
     }
   };
