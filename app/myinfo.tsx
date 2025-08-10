@@ -2,36 +2,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import BottomNavigationBar from '../components/BottomNavigationBar';
 import FamilyGroup, { FamilyAvatar } from '../components/FamilyGroup';
-
-const FAMILY_DATA = [
-  { id: 'invite', type: 'invite' },
-  { id: '1', name: '오말숙', active: true },
-  { id: '2', name: '남지윤', active: false },
-  { id: '3', name: '홍준우', active: false },
-  { id: '4', name: '이수아', active: false },
-];
-
-// // 현재 사용자 정보 (실제로는 로그인 정보에서 가져올 데이터)
-// const USER_PROFILE = {
-//   name: '김철수', // 예시 이름
-//   email: 'kimcs@example.com',
-// };
-
-// function UserProfileSection() {
-//   return (
-//     <View style={styles.profileSection}>
-//       <FamilyAvatar
-//         name={USER_PROFILE.name}
-//         active={true}
-//         style={styles.userAvatar}
-//       />
-//       <View style={styles.userInfo}>
-//         <Text style={styles.userName}>{USER_PROFILE.name}</Text>
-//         <Text style={styles.userEmail}>{USER_PROFILE.email}</Text>
-//       </View>
-//     </View>
-//   );
-// }
+import { FAMILY_DATA } from '@/constants/FamilyData';
 
 function OverlappingAvatars({ data }: { data: any[] }) {
   const familyMembers = data.filter(item => item.id !== 'invite');
@@ -55,7 +26,7 @@ export default function MyInfoScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>가족</Text>
+        <Text style={styles.title}>내 정보</Text>
         <Text style={styles.subtitle}>프로필 및 설정</Text>
 
         {/*<UserProfileSection />*/}

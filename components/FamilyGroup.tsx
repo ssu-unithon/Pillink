@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
 export function FamilyAvatar({ name, active, style }: { name: string; active?: boolean; style?: any }) {
   return (
@@ -11,6 +12,8 @@ export function FamilyAvatar({ name, active, style }: { name: string; active?: b
 }
 
 const FamilyListItem = ({ item }: { item: any }) => {
+  const router = useRouter();
+
   if (item.type === 'invite') {
     return (
       <TouchableOpacity style={styles.row} activeOpacity={0.7}>
@@ -21,8 +24,13 @@ const FamilyListItem = ({ item }: { item: any }) => {
       </TouchableOpacity>
     );
   }
+
   return (
-    <View style={styles.row}>
+    <TouchableOpacity
+      style={styles.row}
+      activeOpacity={0.7}
+      onPress={() => router.push(`/family/${item.id}`)}
+    >
       <FamilyAvatar name={item.name} active={item.active} />
       <Text style={styles.name}>{item.name}</Text>
       <View style={styles.iconContainer}>
@@ -36,11 +44,13 @@ const FamilyListItem = ({ item }: { item: any }) => {
           </View>
         )}
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
 const FamilyGroup = ({ data, showAvatars = true }: { data: any[], showAvatars?: boolean }) => {
+  const router = useRouter();
+
   const renderItem = ({ item }: { item: any }) => {
     if (item.type === 'invite') {
       return (
@@ -53,7 +63,11 @@ const FamilyGroup = ({ data, showAvatars = true }: { data: any[], showAvatars?: 
       );
     }
     return (
-      <View style={styles.row}>
+      <TouchableOpacity
+        style={styles.row}
+        activeOpacity={0.7}
+        onPress={() => router.push(`/family/${item.id}`)}
+      >
         {showAvatars && (
           <FamilyAvatar name={item.name} active={item.active} />
         )}
@@ -69,7 +83,7 @@ const FamilyGroup = ({ data, showAvatars = true }: { data: any[], showAvatars?: 
             </View>
           )}
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
   return (
