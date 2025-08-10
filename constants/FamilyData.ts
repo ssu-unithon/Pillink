@@ -1,4 +1,3 @@
-// 약물 정보 타입 정의
 export interface MedicationInfo {
   id: string;
   medicationName: string;
@@ -10,7 +9,6 @@ export interface MedicationInfo {
   icon: string;
 }
 
-// 가족 구성원 데이터 타입 정의
 export interface FamilyMember {
   id: string;
   name: string;

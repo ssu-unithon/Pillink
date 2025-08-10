@@ -1,32 +1,47 @@
 import React, { useEffect, useState } from "react";
-import { Stack } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import { View, ActivityIndicator } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Colors } from "@/constants/Colors";
+import { DevModeProvider } from "@/contexts/DevModeContext";
 
 const ONBOARDING_COMPLETED_KEY = "onboarding_completed";
 
-export default function RootLayout() {
+function RootLayoutNav() {
   const [isLoading, setIsLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const segments = useSegments();
+  const router = useRouter();
+
+  const checkOnboardingStatus = async () => {
+    try {
+      const onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
+      const shouldShowOnboarding = onboardingCompleted !== "true";
+      setShowOnboarding(shouldShowOnboarding);
+
+      // 온보딩 상태에 따라 네비게이션
+      if (shouldShowOnboarding && segments[0] !== "onboarding") {
+        router.replace("/onboarding");
+      } else if (!shouldShowOnboarding && segments[0] === "onboarding") {
+        router.replace("/");
+      }
+    } catch (error) {
+      console.error("Error checking onboarding status:", error);
+      setShowOnboarding(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     checkOnboardingStatus();
   }, []);
 
-  const checkOnboardingStatus = async () => {
-    try {
-      const onboardingCompleted = await AsyncStorage.getItem(
-        ONBOARDING_COMPLETED_KEY
-      );
-      setShowOnboarding(onboardingCompleted !== "true");
-    } catch (error) {
-      console.error("Error checking onboarding status:", error);
-      setShowOnboarding(true); // 오류 시 온보딩 표시
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // AsyncStorage 변경을 감지하기 위한 interval
+  useEffect(() => {
+    const interval = setInterval(checkOnboardingStatus, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   if (isLoading) {
     return (
@@ -44,31 +59,27 @@ export default function RootLayout() {
   }
 
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false, // 상단 헤더 완전히 숨김
-        animation: "none", // 애니메이션 없음
-        presentation: "card", // 카드 스타일로 설정
-        animationDuration: 0, // 애니메이션 지속시간 0
-        gestureEnabled: false, // 스와이프 제스처 비활성화
-      }}
-    >
-      {showOnboarding ? (
-        <Stack.Screen
-          name="onboarding"
-          options={{
-            headerShown: false,
-            gestureEnabled: false, // 온보딩에서는 제스처로 뒤로가기 방지
-          }}
-        />
-      ) : (
-        <>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="chat" />
-          <Stack.Screen name="interaction" />
-          <Stack.Screen name="myinfo" />
-        </>
-      )}
+    <Stack screenOptions={{
+      headerShown: false,
+      animation: "none",
+      presentation: "card",
+      animationDuration: 0,
+      gestureEnabled: false
+    }}>
+      <Stack.Screen name="onboarding" />
+      <Stack.Screen name="index" />
+      <Stack.Screen name="chat" />
+      <Stack.Screen name="interaction" />
+      <Stack.Screen name="myinfo" />
+      <Stack.Screen name="family/[id]" />
     </Stack>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <DevModeProvider>
+      <RootLayoutNav />
+    </DevModeProvider>
   );
 }
