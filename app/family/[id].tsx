@@ -199,7 +199,7 @@ export default function FamilyAlarmScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: Colors.background,
   },
   content: {
     flex: 1,

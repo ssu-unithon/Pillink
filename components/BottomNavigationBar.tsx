@@ -86,7 +86,7 @@ export default function BottomNavigationBar({ activeIndex = 0, onTabPress }: { a
             <MaterialCommunityIcons
               name={icon}
               size={26}
-              color={isActive ? Colors.light.navbarTabActive : Colors.light.navbarTabInactive}
+              color={isActive ? Colors.navbarTabActive : Colors.navbarTabInactive}
               style={[styles.icon, isActive && styles.activeIcon]}
             />
           </TouchableOpacity>
@@ -99,10 +99,10 @@ export default function BottomNavigationBar({ activeIndex = 0, onTabPress }: { a
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: Colors.light.navbarBackground,
+    backgroundColor: Colors.navbarBackground,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    shadowColor: Colors.light.navbarShadow,
+    shadowColor: Colors.navbarShadow,
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 2,
   },
   activeTab: {
-    backgroundColor: Colors.light.navbarTabActiveBg,
+    backgroundColor: Colors.navbarTabActiveBg,
     transform: [{ scale: 1.02 }],
   },
   icon: {
@@ -142,10 +142,10 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: Colors.light.navbarCenterButton,
+    backgroundColor: Colors.navbarCenterButton,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: Colors.light.navbarCenterButton,
+    shadowColor: Colors.navbarCenterButton,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 16,
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     top: -48,
   },
   centerCircleActive: {
-    backgroundColor: Colors.light.navbarCenterButtonActive,
+    backgroundColor: Colors.navbarCenterButtonActive,
     transform: [{ scale: 1.05 }],
     shadowOpacity: 0.4,
   },

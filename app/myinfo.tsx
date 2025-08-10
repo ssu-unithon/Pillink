@@ -99,7 +99,7 @@ export default function MyInfoScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: Colors.background,
   },
   scrollView: {
     flex: 1,
@@ -113,12 +113,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: Colors.light.text,
+    color: Colors.text,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: Colors.light.mediumGray,
+    color: Colors.mediumGray,
   },
   familyGroupWrapper: {
     marginTop: 40,

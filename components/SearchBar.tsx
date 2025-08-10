@@ -17,7 +17,7 @@ export default function SearchBar({ value, onChangeText, placeholder = '복용�
       <TextInput
         style={styles.input}
         placeholder={placeholder}
-        placeholderTextColor={Colors.light.mediumGray}
+        placeholderTextColor={Colors.mediumGray}
         value={value}
         onChangeText={onChangeText}
         underlineColorAndroid="transparent"

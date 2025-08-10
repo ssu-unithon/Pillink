@@ -262,7 +262,7 @@ export default function ChatScreen() {
             </ScrollView>
             <Animated.View style={[styles.scrollToBottomButton, {opacity: scrollButtonAnim, transform: [{scale: scrollButtonAnim}]}]}>
                 <TouchableOpacity onPress={scrollToBottom}>
-                    <Ionicons name="arrow-down-circle" size={40} color={Colors.light.primary} />
+                    <Ionicons name="arrow-down-circle" size={40} color={Colors.primary} />
                 </TouchableOpacity>
             </Animated.View>
         </View>
@@ -293,7 +293,7 @@ export default function ChatScreen() {
                 value={inputText}
                 onChangeText={setInputText}
                 placeholder="약물에 대해 궁금한 점을 물어보세요..."
-                placeholderTextColor={Colors.light.mediumGray}
+                placeholderTextColor={Colors.mediumGray}
                 multiline
                 maxLength={500}
                 onFocus={() => setIsInputFocused(true)}
@@ -302,13 +302,13 @@ export default function ChatScreen() {
               <TouchableOpacity
                 style={[
                   styles.sendButton,
-                  { backgroundColor: inputText.trim() ? Colors.light.primary : Colors.light.lightGray },
+                  { backgroundColor: inputText.trim() ? Colors.primary : Colors.lightGray },
                 ]}
                 onPress={() => handleSendMessage(inputText)}
                 disabled={!inputText.trim()}
                 activeOpacity={0.7}
               >
-                <Ionicons name="arrow-up" size={20} color={inputText.trim() ? '#fff' : Colors.light.mediumGray} />
+                <Ionicons name="arrow-up" size={20} color={inputText.trim() ? '#fff' : Colors.mediumGray} />
               </TouchableOpacity>
             </View>
           </View>
@@ -322,7 +322,7 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -331,13 +331,13 @@ const styles = StyleSheet.create({
     paddingBottom: 15,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: Colors.light.border,
+    borderBottomColor: Colors.border,
   },
   aiAvatar: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: Colors.light.primaryLight,
+    backgroundColor: Colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -351,11 +351,11 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 17,
     fontWeight: '600',
-    color: Colors.light.text,
+    color: Colors.text,
   },
   headerSubtitle: {
     fontSize: 13,
-    color: Colors.light.secondary,
+    color: Colors.secondary,
     fontWeight: '500',
   },
   messagesContainer: {
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   userMessage: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: Colors.primary,
     borderBottomRightRadius: 4,
     marginLeft: 'auto',
   },
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderBottomLeftRadius: 4,
     borderWidth: 1,
-    borderColor: Colors.light.border,
+    borderColor: Colors.border,
   },
   messageText: {
     fontSize: 16,
@@ -402,11 +402,11 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   aiMessageText: {
-    color: Colors.light.text,
+    color: Colors.text,
   },
   messageTime: {
     fontSize: 12,
-    color: Colors.light.mediumGray,
+    color: Colors.mediumGray,
     marginHorizontal: 8,
   },
   userMessageTime: {
@@ -429,7 +429,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: Colors.light.mediumGray,
+    backgroundColor: Colors.mediumGray,
   },
   quickQuestionsContainer: {
     paddingTop: 8,
@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
   quickQuestionsTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: Colors.light.text,
+    color: Colors.text,
     marginBottom: 12,
   },
   quickQuestionButton: {
@@ -449,17 +449,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: Colors.light.border,
+    borderColor: Colors.border,
   },
   quickQuestionText: {
     fontSize: 14,
-    color: Colors.light.primary,
+    color: Colors.primary,
     fontWeight: '500',
   },
   inputContainer: {
     backgroundColor: '#fff',
     borderTopWidth: 1,
-    borderTopColor: Colors.light.border,
+    borderTopColor: Colors.border,
   },
   inputWrapper: {
     flexDirection: 'row',
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
   },
   textInput: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: Colors.background,
     borderRadius: 24,
     paddingHorizontal: 18,
     paddingVertical: 12,
@@ -482,7 +482,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     maxHeight: 120,
     borderWidth: 1,
-    borderColor: Colors.light.border,
+    borderColor: Colors.border,
   },
   sendButton: {
     width: 44,

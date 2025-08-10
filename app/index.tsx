@@ -62,7 +62,7 @@ export default function Index() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.light.background }}>
+    <View style={{ flex: 1, backgroundColor: Colors.background }}>
       <ScrollView
         style={styles.container}
         contentContainerStyle={{ paddingBottom: 120, paddingTop: insets.top + 10 }}
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: Colors.light.primary,
+    color: Colors.primary,
   },
   headerIcons: {
     flexDirection: 'row',
@@ -192,16 +192,16 @@ const styles = StyleSheet.create({
   greetingText: {
     fontSize: 22,
     fontWeight: '700',
-    color: Colors.light.text,
+    color: Colors.text,
     marginBottom: 6,
   },
   greetingHighlight: {
-    color: Colors.light.primary,
+    color: Colors.primary,
     fontWeight: 'bold',
   },
   greetingSubtext: {
     fontSize: 15,
-    color: Colors.light.mediumGray,
+    color: Colors.mediumGray,
   },
   quickActionsContainer: {
     flexDirection: 'row',
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   quickActionText: {
     fontSize: 13,
     fontWeight: '600',
-    color: Colors.light.text,
+    color: Colors.text,
     textAlign: 'center',
   },
   sectionContainer: {
@@ -242,12 +242,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: Colors.light.text,
+    color: Colors.text,
     marginBottom: 4,
   },
   sectionSubtitle: {
     fontSize: 14,
-    color: Colors.light.mediumGray,
+    color: Colors.mediumGray,
   },
   card: {
     backgroundColor: '#fff',
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 12,
-    backgroundColor: Colors.light.lightGray,
+    backgroundColor: Colors.lightGray,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
@@ -295,17 +295,17 @@ const styles = StyleSheet.create({
   newsTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.light.text,
+    color: Colors.text,
     marginBottom: 6,
   },
   newsSubtitle: {
     fontSize: 14,
-    color: Colors.light.mediumGray,
+    color: Colors.mediumGray,
     lineHeight: 20,
   },
   newsDate: {
     fontSize: 12,
-    color: Colors.light.mediumGray,
+    color: Colors.mediumGray,
     fontWeight: '500',
     marginTop: 8,
   },

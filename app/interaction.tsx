@@ -29,7 +29,7 @@ export default function InteractionScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.light.background }}>
+    <View style={{ flex: 1, backgroundColor: Colors.background }}>
       <ScrollView
         style={styles.container}
         contentContainerStyle={{ paddingBottom: 100 }}
@@ -94,17 +94,17 @@ export default function InteractionScreen() {
                 <View style={[
                   styles.riskBadge,
                   { backgroundColor:
-                    selectedGroup === 'duplicate' ? Colors.light.primaryLight :
-                    selectedGroup === 'risk' ? Colors.light.dangerLight :
-                    Colors.light.secondaryLight
+                    selectedGroup === 'duplicate' ? Colors.primaryLight :
+                    selectedGroup === 'risk' ? Colors.dangerLight :
+                    Colors.secondaryLight
                   }
                 ]}>
                   <Text style={[
                     styles.riskBadgeText,
                     { color:
-                      selectedGroup === 'duplicate' ? Colors.light.primary :
-                      selectedGroup === 'risk' ? Colors.light.danger :
-                      Colors.light.secondary
+                      selectedGroup === 'duplicate' ? Colors.primary :
+                      selectedGroup === 'risk' ? Colors.danger :
+                      Colors.secondary
                     }
                   ]}>
                     {item.type}
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 16,
-    backgroundColor: Colors.light.background,
+    backgroundColor: Colors.background,
   },
   header: {
     paddingTop: 50,
@@ -142,12 +142,12 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: Colors.light.text,
+    color: Colors.text,
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 14,
-    color: Colors.light.mediumGray,
+    color: Colors.mediumGray,
   },
   sectionContainer: {
     marginBottom: 32,
@@ -158,12 +158,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: Colors.light.text,
+    color: Colors.text,
     marginBottom: 4,
   },
   sectionSubtitle: {
     fontSize: 14,
-    color: Colors.light.mediumGray,
+    color: Colors.mediumGray,
     fontWeight: '400',
   },
   gaugeSection: {
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
   detailSectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.light.text,
+    color: Colors.text,
     marginBottom: 12,
   },
   medicationItem: {
@@ -207,16 +207,16 @@ const styles = StyleSheet.create({
   medicationName: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.light.text,
+    color: Colors.text,
     marginBottom: 4,
   },
   medicationDescription: {
     fontSize: 14,
-    color: Colors.light.mediumGray,
+    color: Colors.mediumGray,
   },
   tapHint: {
     fontSize: 12,
-    color: Colors.light.secondary,
+    color: Colors.secondary,
     marginTop: 4,
   },
   riskBadge: {
@@ -247,12 +247,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.light.border,
+    borderBottomColor: Colors.border,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: Colors.light.text,
+    color: Colors.text,
     flex: 1,
   },
   closeButton: {
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
   },
   closeButtonText: {
     fontSize: 18,
-    color: Colors.light.mediumGray,
+    color: Colors.mediumGray,
   },
   modalBody: {
     padding: 20,
@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
   },
   modalDescription: {
     fontSize: 16,
-    color: Colors.light.text,
+    color: Colors.text,
     lineHeight: 24,
     marginBottom: 24,
   },
@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   actionButton: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: Colors.primary,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
@@ -300,10 +300,10 @@ const styles = StyleSheet.create({
   secondaryButton: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: Colors.light.border,
+    borderColor: Colors.border,
   },
   secondaryButtonText: {
-    color: Colors.light.text,
+    color: Colors.text,
   },
   selectedGroupSection: {
     marginBottom: 32,
@@ -314,12 +314,12 @@ const styles = StyleSheet.create({
   selectedGroupTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: Colors.light.text,
+    color: Colors.text,
     marginBottom: 4,
   },
   selectedGroupSubtitle: {
     fontSize: 14,
-    color: Colors.light.mediumGray,
+    color: Colors.mediumGray,
     fontWeight: '400',
   },
   warningContainer: {
@@ -351,12 +351,12 @@ const styles = StyleSheet.create({
   emptyStateTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: Colors.light.text,
+    color: Colors.text,
     marginBottom: 8,
   },
   emptyStateDescription: {
     fontSize: 14,
-    color: Colors.light.mediumGray,
+    color: Colors.mediumGray,
     textAlign: 'center',
   },
 });

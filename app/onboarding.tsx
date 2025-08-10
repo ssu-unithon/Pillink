@@ -23,24 +23,24 @@ const onboardingData = [
     title: "안전한 복용을 위한\n스마트 가이드",
     subtitle: "약물 상호작용을 미리 확인하고\n안전하게 복용하세요",
     icon: "💊",
-    backgroundColor: Colors.light.primaryLight,
-    buttonColor: Colors.light.primary,
+    backgroundColor: Colors.primaryLight,
+    buttonColor: Colors.primary,
   },
   {
     id: 2,
     title: "AI 기반\n맞춤형 건강관리",
     subtitle: "개인의 복용 패턴을 분석하여\n최적의 건강 관리를 제공합니다",
     icon: "🤖",
-    backgroundColor: Colors.light.secondaryLight,
-    buttonColor: Colors.light.secondary,
+    backgroundColor: Colors.secondaryLight,
+    buttonColor: Colors.secondary,
   },
   {
     id: 3,
     title: "간편한 복용 기록과\n알림 서비스",
     subtitle: "복용 시간을 놓치지 않도록\n스마트하게 관리해드립니다",
     icon: "⏰",
-    backgroundColor: Colors.light.dangerLight,
-    buttonColor: Colors.light.danger,
+    backgroundColor: Colors.dangerLight,
+    buttonColor: Colors.danger,
   }
 ];
 
@@ -62,7 +62,7 @@ const Paginator = ({ data, currentIndex }: { data: any[], currentIndex: number }
     return (
         <View style={styles.pageIndicator}>
             {data.map((item, i) => {
-                return <View key={i.toString()} style={[styles.dot, { backgroundColor: i === currentIndex ? item.buttonColor : Colors.light.lightGray }]} />;
+                return <View key={i.toString()} style={[styles.dot, { backgroundColor: i === currentIndex ? item.buttonColor : Colors.lightGray }]} />;
             })}
         </View>
     );
@@ -115,7 +115,7 @@ export default function OnboardingScreen() {
         <TextButton
           title="건너뛰기"
           onPress={completeOnboarding}
-          color={Colors.light.mediumGray}
+          color={Colors.mediumGray}
           fontSize={16}
         />
       </View>
@@ -183,13 +183,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 16,
     lineHeight: 40,
-    color: Colors.light.text,
+    color: Colors.text,
   },
   subtitle: {
     fontSize: 16,
     textAlign: 'center',
     lineHeight: 24,
-    color: Colors.light.mediumGray,
+    color: Colors.mediumGray,
   },
   pageIndicator: {
     flexDirection: 'row',

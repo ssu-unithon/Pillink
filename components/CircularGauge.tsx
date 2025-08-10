@@ -19,8 +19,8 @@ export default function CircularGauge({
   size = 72,
   strokeWidth = 12,
   pieGradientColors = ['#BD0000', '#FF8282'], // Default gradient colors
-  centerCircleColor = Colors.light.background, // Default white
-  percentageTextColor = Colors.light.text, // Default dark text
+  centerCircleColor = Colors.background, // Default white
+  percentageTextColor = Colors.text, // Default dark text
   percentageTextSize, // 기본값 제거 - 크기에 비례하여 계산
   percentageTextWeight = 'bold', // Default font weight
 }: CircularGaugeProps) {
@@ -86,7 +86,7 @@ export default function CircularGauge({
         backgroundColor: centerCircleColor,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: Colors.light.text,
+        shadowColor: Colors.text,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.22,
         shadowRadius: 12,
