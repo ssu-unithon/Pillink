@@ -6,7 +6,6 @@ import {
   Dimensions,
   StatusBar,
   FlatList,
-  TouchableOpacity,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';

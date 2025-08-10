@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { Colors } from '../constants/Colors';
+import { Colors } from '@/constants/Colors';
 import SearchBar from '../components/SearchBar';
 import CircularGauge from '../components/CircularGauge';
 import InteractionRiskGroups from '../components/InteractionRiskGroups';
