@@ -18,6 +18,35 @@ export default function CircularGauge({
   showValue = true,
   title
 }: CircularGaugeProps) {
+  // value 값 검증 및 기본값 처리
+  const safeValue = typeof value === 'number' && !isNaN(value) && isFinite(value) ? value : 0;
+  const clampedValue = Math.max(0, Math.min(100, safeValue)); // 0-100 범위로 제한
+
+  // 수치에 따른 그라데이션 색상 결정
+  const getGradientColors = (val: number) => {
+    if (val >= 67 && val <= 100) {
+      // 높은 위험도: 빨간색 그라데이션
+      return {
+        colors: ['#BD0000', '#FF8282'],
+        id: 'highRisk'
+      };
+    } else if (val >= 34 && val <= 66) {
+      // 보통 위험도: 주황색 그라데이션
+      return {
+        colors: ['#F59E0B', '#FBBF24'],
+        id: 'mediumRisk'
+      };
+    } else {
+      // 낮은 위험도: 초록색 그라데이션
+      return {
+        colors: ['#10B981', '#34D399'],
+        id: 'lowRisk'
+      };
+    }
+  };
+
+  const gradientConfig = getGradientColors(clampedValue);
+
   // 게이지의 중심과 반지름 계산
   const center = size / 2;
   const radius = center - strokeWidth / 2;
@@ -43,18 +72,33 @@ export default function CircularGauge({
       "Z",
     ].join(" ");
   };
-  const endAngle = startAngle + (value / 100) * 360;
-  const piePath = describeArc(center, center, radius, startAngle, endAngle);
-  const bgPath = describeArc(center, center, radius, endAngle, startAngle + 360);
+
+  // 전체 원형 배경을 위한 경로 (항상 360도)
+  const describeFullCircle = (cx: number, cy: number, r: number) => {
+    return [
+      `M ${cx - r} ${cy}`,
+      `A ${r} ${r} 0 1 1 ${cx + r} ${cy}`,
+      `A ${r} ${r} 0 1 1 ${cx - r} ${cy}`,
+      "Z",
+    ].join(" ");
+  };
+
+  const endAngle = startAngle + (clampedValue / 100) * 360;
+  const piePath = clampedValue > 0 ? describeArc(center, center, radius, startAngle, endAngle) : "";
+  const bgPath = describeFullCircle(center, center, radius);
 
   return (
     <View style={[styles.container, { width: size, height: size, borderRadius: size / 2 }]}>
       <Svg width={size} height={size} style={{ position: 'absolute' }}>
         <Defs>
-          {/* 그라데이션 설정 */}
-          <LinearGradient id="strokeGradient" x1="50%" y1="100%" x2="50%" y2="0%">
-            {['#BD0000', '#FF8282'].map((color, index) => (
-              <Stop key={index} offset={`${(index / (2 - 1)) * 100}%`} stopColor={color} />
+          {/* 동적 그라데이션 설정 */}
+          <LinearGradient id={gradientConfig.id} x1="50%" y1="100%" x2="50%" y2="0%">
+            {gradientConfig.colors.map((color, index) => (
+              <Stop
+                key={index}
+                offset={`${(index / (gradientConfig.colors.length - 1)) * 100}%`}
+                stopColor={color}
+              />
             ))}
           </LinearGradient>
         </Defs>
@@ -66,7 +110,7 @@ export default function CircularGauge({
         {/* 파이 모양 게이지 */}
         <Path
           d={piePath}
-          fill="url(#strokeGradient)"
+          fill={`url(#${gradientConfig.id})`}
         />
       </Svg>
       {/* 중앙 흰색 원 */}
@@ -91,7 +135,7 @@ export default function CircularGauge({
             fontSize: calculatedTextSize,
             fontWeight: 'bold',
             color: '#222',
-          }}>{value}</Text>
+          }}>{clampedValue}</Text>
         )}
         {title && (
           <Text style={{

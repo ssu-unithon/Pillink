@@ -2,9 +2,8 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Colors } from '../constants/Colors';
+import { Colors } from '@/constants/Colors';
 
-// 더 직관적인 아이콘들로 변경
 const icons = [
   'home',
   'pill',
@@ -27,13 +26,13 @@ export default function BottomNavigationBar({ activeIndex = 0, onTabPress }: { a
         router.push('/');
         break;
       case 1:
-        router.push('/interaction'); // 약물 상호작용 페이지로 이동
+        router.push('/interaction');
         break;
       case 2:
         // router.push('/add');
         break;
       case 3:
-        router.push('/chat'); // AI 챗봇 화면으로 이동
+        router.push('/chat');
         break;
       case 4:
         router.push('/myinfo');

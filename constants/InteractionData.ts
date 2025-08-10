@@ -14,57 +14,12 @@ const calculateRiskScore = (dangerousCount: number, totalInteractions: number): 
 
 // 기본 상호작용 데이터
 export const INTERACTION_DATA: InteractionData = {
-  dangerousCount: 1,
+  dangerousCount: 3,
   safeCount: 8,
   totalInteractions: 11,
   get riskScore() {
     return calculateRiskScore(this.dangerousCount, this.totalInteractions);
   }
-};
-
-// 위험도 레벨별 색상 및 텍스트
-export const getRiskLevel = (score: number) => {
-  if (score >= 80) {
-    return {
-      level: 'high',
-      text: '높음',
-      color: '#EF4444',
-      backgroundColor: '#FEF2F2',
-    };
-  } else if (score >= 50) {
-    return {
-      level: 'medium',
-      text: '보통',
-      color: '#F59E0B',
-      backgroundColor: '#FFFBEB',
-    };
-  } else {
-    return {
-      level: 'low',
-      text: '낮음',
-      color: '#10B981',
-      backgroundColor: '#ECFDF5',
-    };
-  }
-};
-
-// 상호작용 카테고리별 색상
-export const INTERACTION_COLORS = {
-  duplicate: {
-    primary: '#8B5CF6',
-    background: '#F5F3FF',
-    light: '#EDE9FE',
-  },
-  dangerous: {
-    primary: '#EF4444',
-    background: '#FEF2F2',
-    light: '#FEE2E2',
-  },
-  safe: {
-    primary: '#10B981',
-    background: '#ECFDF5',
-    light: '#D1FAE5',
-  },
 };
 
 // 가족별 상호작용 데이터 (예시)
