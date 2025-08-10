@@ -8,6 +8,7 @@ import BottomNavigationBar from "../components/BottomNavigationBar";
 import SearchBar from '../components/SearchBar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { INTERACTION_DATA } from "@/constants/InteractionData";
 
 // Module-level variable to track if animation has run once per session
 let hasAnimatedOnce = false;
@@ -128,7 +129,7 @@ export default function Index() {
                 <View style={styles.card}>
                     <View style={styles.interactionRiskContent}>
                         <View style={styles.circularGaugeContainer}>
-                        <CircularGauge percentage={79} size={100} />
+                        <CircularGauge value={INTERACTION_DATA.riskScore} size={100} />
                         </View>
                         <View style={styles.interactionRiskGroupsWrapper}>
                         <InteractionRiskGroups />
@@ -143,7 +144,7 @@ export default function Index() {
             <View style={styles.sectionContainer}>
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>건강 뉴스</Text>
-                    <Text style={styles.sectionSubtitle}>유은정님을 위한 맞춤 정보</Text>
+                    <Text style={styles.sectionSubtitle}>��은정님을 위한 맞춤 정보</Text>
                 </View>
                 <TouchableOpacity style={styles.card} activeOpacity={0.8}>
                     <View style={styles.newsContentWrapper}>

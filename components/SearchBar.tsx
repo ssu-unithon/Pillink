@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, TextInput, StyleSheet, Image } from 'react-native';
-import { Colors } from '../constants/Colors';
+import { Colors } from '@/constants/Colors';
 
 export default function SearchBar({ value, onChangeText, placeholder = '복용하시는 약을 등록해보세요' }: {
   value?: string;
