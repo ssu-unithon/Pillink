@@ -492,7 +492,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 2,
   },
-});  scrollToBottomButton: {
+  scrollToBottomButton: {
       position: 'absolute',
       bottom: 20,
       right: 20,
