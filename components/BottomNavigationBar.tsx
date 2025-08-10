@@ -34,13 +34,13 @@ export default function BottomNavigationBar({ activeIndex = 0, onTabPress }: { a
         router.push('/');
         break;
       case 1:
-        // router.push('/medications');
+        router.push('/interaction'); // 약물 상호작용 페이지로 이동
         break;
       case 2:
         // router.push('/add');
         break;
       case 3:
-        // router.push('/chat');
+        router.push('/chat'); // AI 챗봇 화면으로 이동
         break;
       case 4:
         router.push('/myinfo');

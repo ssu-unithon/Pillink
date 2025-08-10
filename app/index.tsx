@@ -1,92 +1,164 @@
-import { Text, View, ScrollView, Image, StyleSheet } from "react-native";
+import React, { useEffect, useRef } from 'react';
+import { Text, View, ScrollView, StyleSheet, Animated, TouchableOpacity } from "react-native";
 import InteractionRiskGroups from "../components/InteractionRiskGroups";
 import CircularGauge from "../components/CircularGauge";
 import CalendarComponent from "../components/CalendarComponent";
 import { Colors } from "@/constants/Colors";
 import BottomNavigationBar from "../components/BottomNavigationBar";
 import SearchBar from '../components/SearchBar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
+
+// Module-level variable to track if animation has run once per session
+let hasAnimatedOnce = false;
+
+// Animated component for staggered entrance
+const AnimatedSection = ({ children, index, shouldAnimate }: { children: React.ReactNode, index: number, shouldAnimate: boolean }) => {
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+    const slideAnim = useRef(new Animated.Value(30)).current;
+
+    useEffect(() => {
+        if (shouldAnimate) {
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 600,
+                delay: index * 150,
+                useNativeDriver: true,
+            }).start();
+            Animated.timing(slideAnim, {
+                toValue: 0,
+                duration: 600,
+                delay: index * 150,
+                useNativeDriver: true,
+            }).start();
+        } else {
+            fadeAnim.setValue(1);
+            slideAnim.setValue(0);
+        }
+    }, [shouldAnimate, index]);
+
+    return (
+        <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+            {children}
+        </Animated.View>
+    );
+};
 
 export default function Index() {
+  const insets = useSafeAreaInsets();
+
+  // This effect runs only once when the component mounts for the first time in the app session.
+  // It sets the flag to true, so subsequent mounts/re-renders won't trigger the animation.
+  useEffect(() => {
+    if (!hasAnimatedOnce) {
+        hasAnimatedOnce = true;
+    }
+  }, []);
+
+  const onQuickActionPress = (action: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Add navigation logic here based on the action
+    console.log(action, 'pressed');
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: Colors.light.background }}>
       <ScrollView
         style={styles.container}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: 120, paddingTop: insets.top + 10 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header with Status Bar */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>PillLink</Text>
-          <View style={styles.headerIcons}>
-            {/* 알림, 설정 아이콘 등 추가 가능 */}
-          </View>
-        </View>
+        {/* Header */}
+        <AnimatedSection index={0} shouldAnimate={!hasAnimatedOnce}>
+            <View style={styles.header}>
+                <Text style={styles.headerTitle}>PillLink</Text>
+                <View style={styles.headerIcons}>
+                    {/* Icons can be added here */}
+                </View>
+            </View>
+        </AnimatedSection>
 
         {/* Search Bar */}
-        <SearchBar />
+        <AnimatedSection index={1} shouldAnimate={!hasAnimatedOnce}>
+            <SearchBar />
+        </AnimatedSection>
 
-        {/* Greeting Text - 더 친근하고 명확하게 */}
-        <View style={styles.greetingContainer}>
-          <Text style={styles.greetingText}>
-            안녕하세요, <Text style={styles.greetingHighlight}>유은정님!</Text>
-          </Text>
-          <Text style={styles.greetingSubtext}>
-            오늘도 건강한 하루 되세요 ✨
-          </Text>
-        </View>
+        {/* Greeting Text */}
+        <AnimatedSection index={2} shouldAnimate={!hasAnimatedOnce}>
+            <View style={styles.greetingContainer}>
+            <Text style={styles.greetingText}>
+                안녕하세요, <Text style={styles.greetingHighlight}>유은정님!</Text>
+            </Text>
+            <Text style={styles.greetingSubtext}>
+                오늘도 건강한 하루 되세요 ✨
+            </Text>
+            </View>
+        </AnimatedSection>
 
-        {/* Quick Actions - 빠른 액션 버튼들 */}
-        <View style={styles.quickActionsContainer}>
-          <View style={styles.quickActionCard}>
-            <Text style={styles.quickActionIcon}>💊</Text>
-            <Text style={styles.quickActionText}>복용 기록</Text>
-          </View>
-          <View style={styles.quickActionCard}>
-            <Text style={styles.quickActionIcon}>⏰</Text>
-            <Text style={styles.quickActionText}>알림 설정</Text>
-          </View>
-          <View style={styles.quickActionCard}>
-            <Text style={styles.quickActionIcon}>📊</Text>
-            <Text style={styles.quickActionText}>통계 보기</Text>
-          </View>
-        </View>
+        {/* Quick Actions */}
+        <AnimatedSection index={3} shouldAnimate={!hasAnimatedOnce}>
+            <View style={styles.quickActionsContainer}>
+                <TouchableOpacity style={styles.quickActionCard} onPress={() => onQuickActionPress('History')} activeOpacity={0.8}>
+                    <Text style={styles.quickActionIcon}>💊</Text>
+                    <Text style={styles.quickActionText}>복용 기록</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.quickActionCard} onPress={() => onQuickActionPress('Settings')} activeOpacity={0.8}>
+                    <Text style={styles.quickActionIcon}>⏰</Text>
+                    <Text style={styles.quickActionText}>알림 설정</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.quickActionCard} onPress={() => onQuickActionPress('Stats')} activeOpacity={0.8}>
+                    <Text style={styles.quickActionIcon}>📊</Text>
+                    <Text style={styles.quickActionText}>통계 보기</Text>
+                </TouchableOpacity>
+            </View>
+        </AnimatedSection>
 
         {/* Calendar Section */}
-        <CalendarComponent />
+        <AnimatedSection index={4} shouldAnimate={!hasAnimatedOnce}>
+            <CalendarComponent />
+        </AnimatedSection>
 
-        {/* Interaction Risk Section - 카드 형식 제거 */}
-        <View style={styles.sectionContainer}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>상호작용 안전도</Text>
-            <Text style={styles.sectionSubtitle}>현재 복용 중인 약물들의 안전성</Text>
-          </View>
-          <View style={styles.interactionRiskContent}>
-            <View style={styles.circularGaugeContainer}>
-              <CircularGauge percentage={79} size={100} />
+        {/* Interaction Risk Section */}
+        <AnimatedSection index={5} shouldAnimate={!hasAnimatedOnce}>
+            <View style={styles.sectionContainer}>
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>상호작용 안전도</Text>
+                    <Text style={styles.sectionSubtitle}>현재 복용 중인 약물들의 안전성</Text>
+                </View>
+                <View style={styles.card}>
+                    <View style={styles.interactionRiskContent}>
+                        <View style={styles.circularGaugeContainer}>
+                        <CircularGauge percentage={79} size={100} />
+                        </View>
+                        <View style={styles.interactionRiskGroupsWrapper}>
+                        <InteractionRiskGroups />
+                        </View>
+                    </View>
+                </View>
             </View>
-            <View style={styles.interactionRiskGroupsWrapper}>
-              <InteractionRiskGroups />
-            </View>
-          </View>
-        </View>
+        </AnimatedSection>
 
-        {/* Health News Section - 카드 디자인으로 개선 */}
-        <View style={styles.sectionContainer}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>건강 뉴스</Text>
-            <Text style={styles.sectionSubtitle}>유은정님을 위한 맞춤 정보</Text>
-          </View>
-          <View style={styles.newsCard}>
-            <View style={styles.newsImagePlaceholder}>
-              <Text style={styles.newsEmoji}>📰</Text>
+        {/* Health News Section */}
+        <AnimatedSection index={6} shouldAnimate={!hasAnimatedOnce}>
+            <View style={styles.sectionContainer}>
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>건강 뉴스</Text>
+                    <Text style={styles.sectionSubtitle}>유은정님을 위한 맞춤 정보</Text>
+                </View>
+                <TouchableOpacity style={styles.card} activeOpacity={0.8}>
+                    <View style={styles.newsContentWrapper}>
+                        <View style={styles.newsImagePlaceholder}>
+                            <Text style={styles.newsEmoji}>📰</Text>
+                        </View>
+                        <View style={styles.newsContent}>
+                            <Text style={styles.newsTitle}>겨울철 감기 예방을 위한 영양제 복용법</Text>
+                            <Text style={styles.newsSubtitle}>면역력 강화를 위한 비타민 D, C 섭취 가이드</Text>
+                            <Text style={styles.newsDate}>2시간 전</Text>
+                        </View>
+                    </View>
+                </TouchableOpacity>
             </View>
-            <View style={styles.newsContent}>
-              <Text style={styles.newsTitle}>겨울철 감기 예방을 위한 영양제 복용법</Text>
-              <Text style={styles.newsSubtitle}>면역력 강화를 위한 비타민 D, C 섭취 가이드</Text>
-              <Text style={styles.newsDate}>2시간 전</Text>
-            </View>
-          </View>
-        </View>
+        </AnimatedSection>
       </ScrollView>
       <BottomNavigationBar />
     </View>
@@ -96,18 +168,17 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 16,
-    backgroundColor: Colors.light.background,
+    paddingHorizontal: 20,
+    backgroundColor: '#f7f8fa', // Slightly off-white background
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 50,
     paddingBottom: 10,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     color: Colors.light.primary,
   },
@@ -116,22 +187,21 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   greetingContainer: {
-    marginVertical: 16,
+    marginVertical: 20,
   },
   greetingText: {
-    fontSize: 20,
-    fontWeight: '600',
+    fontSize: 22,
+    fontWeight: '700',
     color: Colors.light.text,
-    marginBottom: 4,
+    marginBottom: 6,
   },
   greetingHighlight: {
     color: Colors.light.primary,
     fontWeight: 'bold',
   },
   greetingSubtext: {
-    fontSize: 14,
+    fontSize: 15,
     color: Colors.light.mediumGray,
-    fontWeight: '400',
   },
   quickActionsContainer: {
     flexDirection: 'row',
@@ -145,30 +215,32 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowColor: '#aab4c1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#eef0f3'
   },
   quickActionIcon: {
-    fontSize: 24,
-    marginBottom: 8,
+    fontSize: 28,
+    marginBottom: 10,
   },
   quickActionText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: Colors.light.text,
     textAlign: 'center',
   },
   sectionContainer: {
-    marginBottom: 32,
+    marginBottom: 24,
   },
   sectionHeader: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: Colors.light.text,
     marginBottom: 4,
@@ -176,11 +248,23 @@ const styles = StyleSheet.create({
   sectionSubtitle: {
     fontSize: 14,
     color: Colors.light.mediumGray,
-    fontWeight: '400',
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#aab4c1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#eef0f3'
   },
   interactionRiskContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: 10,
   },
   circularGaugeContainer: {
     alignItems: 'center',
@@ -189,20 +273,12 @@ const styles = StyleSheet.create({
   interactionRiskGroupsWrapper: {
     flex: 1,
   },
-  newsCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
+  newsContentWrapper: {
     flexDirection: 'row',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
   },
   newsImagePlaceholder: {
-    width: 60,
-    height: 60,
+    width: 64,
+    height: 64,
     borderRadius: 12,
     backgroundColor: Colors.light.lightGray,
     alignItems: 'center',
@@ -210,27 +286,27 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   newsEmoji: {
-    fontSize: 24,
+    fontSize: 30,
   },
   newsContent: {
     flex: 1,
-    justifyContent: 'space-between',
+    justifyContent: 'center',
   },
   newsTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: Colors.light.text,
-    marginBottom: 4,
+    marginBottom: 6,
   },
   newsSubtitle: {
     fontSize: 14,
     color: Colors.light.mediumGray,
     lineHeight: 20,
-    marginBottom: 8,
   },
   newsDate: {
     fontSize: 12,
     color: Colors.light.mediumGray,
     fontWeight: '500',
+    marginTop: 8,
   },
 });

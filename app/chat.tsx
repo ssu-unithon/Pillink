@@ -11,6 +11,10 @@ import {
   Animated,
   LayoutAnimation,
   UIManager,
+  Alert,
+  Clipboard,
+  NativeSyntheticEvent,
+  NativeScrollEvent
 } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import BottomNavigationBar from '../components/BottomNavigationBar';
@@ -39,38 +43,40 @@ const formatTime = (date: Date) => {
 };
 
 // --- Memoized MessageItem for Performance ---
-const MessageItem = memo(({ message }: { message: Message }) => {
+const MessageItem = memo(({ message, onLongPress }: { message: Message, onLongPress: (text: string) => void }) => {
   return (
-    <View
-      style={[
-        styles.messageWrapper,
-        message.isUser ? styles.userMessageWrapper : styles.aiMessageWrapper,
-      ]}
-    >
-      <View
+    <TouchableOpacity onLongPress={() => onLongPress(message.text)} activeOpacity={0.8}>
+        <View
         style={[
-          styles.messageBubble,
-          message.isUser ? styles.userMessage : styles.aiMessage,
+            styles.messageWrapper,
+            message.isUser ? styles.userMessageWrapper : styles.aiMessageWrapper,
         ]}
-      >
-        <Text
-          style={[
-            styles.messageText,
-            message.isUser ? styles.userMessageText : styles.aiMessageText,
-          ]}
         >
-          {message.text}
+        <View
+            style={[
+            styles.messageBubble,
+            message.isUser ? styles.userMessage : styles.aiMessage,
+            ]}
+        >
+            <Text
+            style={[
+                styles.messageText,
+                message.isUser ? styles.userMessageText : styles.aiMessageText,
+            ]}
+            >
+            {message.text}
+            </Text>
+        </View>
+        <Text
+            style={[
+            styles.messageTime,
+            message.isUser ? styles.userMessageTime : styles.aiMessageTime,
+            ]}
+        >
+            {formatTime(message.timestamp)}
         </Text>
-      </View>
-      <Text
-        style={[
-          styles.messageTime,
-          message.isUser ? styles.userMessageTime : styles.aiMessageTime,
-        ]}
-      >
-        {formatTime(message.timestamp)}
-      </Text>
-    </View>
+        </View>
+    </TouchableOpacity>
   );
 });
 
@@ -123,8 +129,18 @@ export default function ChatScreen() {
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
+  const scrollButtonAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(scrollButtonAnim, {
+        toValue: showScrollToBottom ? 1 : 0,
+        duration: 300,
+        useNativeDriver: true,
+    }).start();
+  }, [showScrollToBottom]);
 
   const quickQuestions = [
     '💊 약물 상호작용이 궁금해요',
@@ -194,9 +210,24 @@ export default function ChatScreen() {
     return '질문해주셔서 감사합니다! 😊\n\n더 정확한 답변을 위해 구체적인 약물명이나 상황을 알려주시면 좋겠어요.\n\n약물 상호작용, 부작용, 복용법 등 무엇이든 물어보세요!\n\n💡 언제나 전문의와의 상담을 우선으로 하시기 바랍니다.';
   };
 
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    const isAtBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 20;
+    setShowScrollToBottom(!isAtBottom);
+  };
+
+  const scrollToBottom = () => {
+    scrollViewRef.current?.scrollToEnd({ animated: true });
+  };
+
+  const handleLongPress = (text: string) => {
+    Clipboard.setString(text);
+    Alert.alert('복사 완료', '메시지가 클립보드에 복사되었습니다.');
+  };
+
   useEffect(() => {
     if (scrollViewRef.current) {
-      scrollViewRef.current.scrollToEnd({ animated: true });
+      scrollViewRef.current.scrollToEnd({ animated: false });
     }
   }, [messages]);
 
@@ -215,17 +246,26 @@ export default function ChatScreen() {
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <ScrollView
-          ref={scrollViewRef}
-          style={styles.messagesContainer}
-          contentContainerStyle={styles.messagesContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {messages.map((msg) => (
-            <MessageItem key={msg.id} message={msg} />
-          ))}
-          {isTyping && <TypingIndicator />}
-        </ScrollView>
+        <View style={{flex: 1}}>
+            <ScrollView
+                ref={scrollViewRef}
+                style={styles.messagesContainer}
+                contentContainerStyle={styles.messagesContent}
+                showsVerticalScrollIndicator={false}
+                onScroll={handleScroll}
+                scrollEventThrottle={16}
+            >
+                {messages.map((msg) => (
+                <MessageItem key={msg.id} message={msg} onLongPress={handleLongPress} />
+                ))}
+                {isTyping && <TypingIndicator />}
+            </ScrollView>
+            <Animated.View style={[styles.scrollToBottomButton, {opacity: scrollButtonAnim, transform: [{scale: scrollButtonAnim}]}]}>
+                <TouchableOpacity onPress={scrollToBottom}>
+                    <Ionicons name="arrow-down-circle" size={40} color={Colors.light.primary} />
+                </TouchableOpacity>
+            </Animated.View>
+        </View>
 
         <View>
           {messages.length < 3 && (
@@ -452,4 +492,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 2,
   },
+});  scrollToBottomButton: {
+      position: 'absolute',
+      bottom: 20,
+      right: 20,
+      zIndex: 10,
+  }
 });
