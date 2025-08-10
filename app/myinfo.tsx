@@ -3,20 +3,21 @@ import { Colors } from '@/constants/Colors';
 import BottomNavigationBar from '../components/BottomNavigationBar';
 import FamilyGroup from '../components/FamilyGroup';
 
-const PROFILE_DATA = [
-  { id: '1', name: '오말숙' },
-  { id: '2', name: '남지윤' },
-  { id: '3', name: '홍준우' },
-  { id: '4', name: '이수아' },
+const FAMILY_DATA = [
+  { id: 'invite', type: 'invite' },
+  { id: '1', name: '오말숙', active: true },
+  { id: '2', name: '남지윤', active: false },
+  { id: '3', name: '홍준우', active: false },
+  { id: '4', name: '이수아', active: false },
 ];
 
-function OverlappingAvatars() {
+function OverlappingAvatars({ data }: { data: any[] }) {
   return (
     <View style={styles.avatarsRow}>
-      {PROFILE_DATA.map((item, idx) => (
+      {data.filter(item => item.id !== 'invite').map((item, idx) => (
         <View
           key={item.id}
-          style={[styles.avatar, { left: idx * 28, zIndex: PROFILE_DATA.length - idx }]} // 겹침 효과
+          style={[styles.avatar, { left: idx * 28, zIndex: data.length - idx }]} // 겹침 효과
         />
       ))}
     </View>
@@ -29,9 +30,9 @@ export default function MyInfoScreen() {
       <View style={styles.content}>
         <Text style={styles.title}>내 정보</Text>
         <Text style={styles.subtitle}>프로필 및 설정</Text>
-        <OverlappingAvatars />
+        <OverlappingAvatars data={FAMILY_DATA} />
         <View style={styles.familyGroupWrapper}>
-          <FamilyGroup />
+          <FamilyGroup data={FAMILY_DATA} />
         </View>
       </View>
       <BottomNavigationBar activeIndex={4} />

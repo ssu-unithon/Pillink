@@ -2,14 +2,6 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 
-const DATA = [
-  { id: 'invite', type: 'invite' },
-  { id: '1', name: '오말숙', active: true },
-  { id: '2', name: '남지윤', active: false },
-  { id: '3', name: '홍준우', active: false },
-  { id: '4', name: '이수아', active: false },
-];
-
 const FamilyListItem = ({ item }: { item: any }) => {
   if (item.type === 'invite') {
     return (
@@ -34,19 +26,42 @@ const FamilyListItem = ({ item }: { item: any }) => {
   );
 };
 
-export default function FamilyGroup() {
+const FamilyGroup = ({ data }: { data: any[] }) => {
+  const renderItem = ({ item }: { item: any }) => {
+    if (item.type === 'invite') {
+      return (
+        <TouchableOpacity style={styles.row}>
+          <View style={styles.circle}>
+            <Ionicons name="add" size={28} color="#4285F4" />
+          </View>
+          <Text style={[styles.inviteText, { color: '#4285F4' }]}>초대하기</Text>
+        </TouchableOpacity>
+      );
+    }
+    return (
+      <View style={styles.row}>
+        <View style={styles.circle} />
+        <Text style={styles.name}>{item.name}</Text>
+        {item.active ? (
+          <Ionicons name="notifications" size={22} color="#3CB371" style={styles.icon} />
+        ) : (
+          <MaterialIcons name="notifications-off" size={22} color="#F44336" style={styles.icon} />
+        )}
+      </View>
+    );
+  };
   return (
     <View style={styles.container}>
       <FlatList
-        data={DATA}
-        renderItem={({ item }) => <FamilyListItem item={item} />}
+        data={data}
+        renderItem={renderItem}
         keyExtractor={item => item.id}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         scrollEnabled={false}
       />
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -97,3 +112,4 @@ const styles = StyleSheet.create({
   },
 });
 
+export default FamilyGroup;
