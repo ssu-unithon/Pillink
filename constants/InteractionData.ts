@@ -1,19 +1,25 @@
 // 약물 상호작용 관련 상수들
 export interface InteractionData {
   riskScore: number;
-  duplicateCount: number;
   dangerousCount: number;
   safeCount: number;
   totalInteractions: number;
 }
 
+// 위험도 점수 계산 함수
+const calculateRiskScore = (dangerousCount: number, totalInteractions: number): number => {
+  if (totalInteractions === 0) return 0;
+  return Math.round((dangerousCount / totalInteractions) * 100);
+};
+
 // 기본 상호작용 데이터
 export const INTERACTION_DATA: InteractionData = {
-  riskScore: 75, // 위험도 점수 (0-100)
-  duplicateCount: 2, // 중복 약물 개수
-  dangerousCount: 3, // 위험 상호작용 개수
-  safeCount: 8, // 안전 상호작용 개수
-  totalInteractions: 13, // 총 상호작용 개수 (중복 + 위험 + 안전)
+  dangerousCount: 1,
+  safeCount: 8,
+  totalInteractions: 11,
+  get riskScore() {
+    return calculateRiskScore(this.dangerousCount, this.totalInteractions);
+  }
 };
 
 // 위험도 레벨별 색상 및 텍스트
@@ -64,32 +70,36 @@ export const INTERACTION_COLORS = {
 // 가족별 상호작용 데이터 (예시)
 export const FAMILY_INTERACTION_DATA: { [key: string]: InteractionData } = {
   '1': { // 오말숙
-    riskScore: 75,
-    duplicateCount: 2,
     dangerousCount: 3,
     safeCount: 8,
-    totalInteractions: 13,
+    totalInteractions: 11,
+    get riskScore() {
+      return calculateRiskScore(this.dangerousCount, this.totalInteractions);
+    }
   },
   '2': { // 남지윤
-    riskScore: 35,
-    duplicateCount: 0,
     dangerousCount: 1,
     safeCount: 4,
     totalInteractions: 5,
+    get riskScore() {
+      return calculateRiskScore(this.dangerousCount, this.totalInteractions);
+    }
   },
   '3': { // 홍준우
-    riskScore: 20,
-    duplicateCount: 0,
     dangerousCount: 0,
     safeCount: 2,
     totalInteractions: 2,
+    get riskScore() {
+      return calculateRiskScore(this.dangerousCount, this.totalInteractions);
+    }
   },
   '4': { // 이수아
-    riskScore: 45,
-    duplicateCount: 1,
     dangerousCount: 1,
     safeCount: 3,
-    totalInteractions: 5,
+    totalInteractions: 4,
+    get riskScore() {
+      return calculateRiskScore(this.dangerousCount, this.totalInteractions);
+    }
   },
 };
 

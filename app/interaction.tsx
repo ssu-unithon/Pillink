@@ -9,19 +9,16 @@ import BottomNavigationBar from '../components/BottomNavigationBar';
 import { INTERACTION_DATA } from '@/constants/InteractionData';
 
 export default function InteractionScreen() {
-  const [selectedGroup, setSelectedGroup] = useState<'duplicate' | 'risk' | 'safe' | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<'risk' | 'safe' | null>(null);
 
-  // 그룹 버튼 클릭 핸들러 (모달 없이 단순 선택만)
-  const handleGroupPress = (groupType: 'duplicate' | 'risk' | 'safe') => {
+  // 그룹 버튼 클릭 핸들러
+  const handleGroupPress = (groupType: 'risk' | 'safe') => {
     const newSelection = selectedGroup === groupType ? null : groupType;
     setSelectedGroup(newSelection);
   };
 
   // 각 그룹별 데이터
   const groupData = {
-    duplicate: [
-      { name: '아스피린 + 와파린', description: '혈액 응고 방지 효과 중복', type: '중복' },
-    ],
     risk: [
       { name: '메트포르민 + 알코올', description: '저혈당 위험 증가', type: '위험' },
     ],
@@ -67,7 +64,6 @@ export default function InteractionScreen() {
         {selectedGroup && (
           <View style={styles.detailContainer}>
             <Text style={styles.detailTitle}>
-              {selectedGroup === 'duplicate' && '중복 성분'}
               {selectedGroup === 'risk' && '위험 상호작용'}
               {selectedGroup === 'safe' && '안전 상호작용'}
             </Text>
