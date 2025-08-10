@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Haptics } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/Colors';
@@ -19,13 +19,6 @@ export default function BottomNavigationBar({ activeIndex = 0, onTabPress }: { a
   const router = useRouter();
 
   const handleTabPress = async (idx: number) => {
-    // 햅틱 피드백 추가
-    try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch (error) {
-      // 햅틱 피드백이 지원되지 않는 환경에서는 무시
-    }
-
     if (onTabPress) onTabPress(idx);
 
     // 라우팅 로직

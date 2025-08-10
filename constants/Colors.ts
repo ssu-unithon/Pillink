@@ -13,9 +13,12 @@ export const Colors = {
   tabIconDefault: '#687076',
   tabIconSelected: tintColorLight,
   primary: '#007aff', // Blue
+  primaryLight: '#E6F2FF', // Light blue background
   secondary: '#32cd32', // Green
+  secondaryLight: '#E6F9E6', // Light green background
   warning: '#ffa500', // Orange
   danger: '#ff3b30', // Red
+  dangerLight: '#FFE6E6', // Light red background
   lightGray: '#f5f5f5',
   mediumGray: '#999',
   darkGray: '#333',
