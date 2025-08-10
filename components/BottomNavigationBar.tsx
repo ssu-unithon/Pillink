@@ -1,10 +1,9 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Haptics } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Colors } from '../constants/Colors';
+import { Colors } from '@/constants/Colors';
 
-// 더 직관적인 아이콘들로 변경
 const icons = [
   'home',
   'pill',
@@ -19,31 +18,27 @@ export default function BottomNavigationBar({ activeIndex = 0, onTabPress }: { a
   const router = useRouter();
 
   const handleTabPress = async (idx: number) => {
-    // 햅틱 피드백 추가
-    try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch (error) {
-      // 햅틱 피드백이 지원되지 않는 환경에서는 무시
-    }
-
     if (onTabPress) onTabPress(idx);
+
+    // 현재 ��성 탭과 같은 탭을 누르면 아무것도 하지 않음
+    if (activeIndex === idx) return;
 
     // 라우팅 로직
     switch (idx) {
       case 0:
-        router.push('/');
+        router.replace('/');
         break;
       case 1:
-        router.push('/interaction'); // 약물 상호작용 페이지로 이동
+        router.replace('/interaction');
         break;
       case 2:
-        // router.push('/add');
+        // router.replace('/add');
         break;
       case 3:
-        router.push('/chat'); // AI 챗봇 화면으로 이동
+        router.replace('/chat');
         break;
       case 4:
-        router.push('/myinfo');
+        router.replace('/myinfo');
         break;
     }
   };
@@ -86,7 +81,7 @@ export default function BottomNavigationBar({ activeIndex = 0, onTabPress }: { a
             <MaterialCommunityIcons
               name={icon}
               size={26}
-              color={isActive ? Colors.light.navbarTabActive : Colors.light.navbarTabInactive}
+              color={isActive ? Colors.navbarTabActive : Colors.navbarTabInactive}
               style={[styles.icon, isActive && styles.activeIcon]}
             />
           </TouchableOpacity>
@@ -99,10 +94,10 @@ export default function BottomNavigationBar({ activeIndex = 0, onTabPress }: { a
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: Colors.light.navbarBackground,
+    backgroundColor: Colors.navbarBackground,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    shadowColor: Colors.light.navbarShadow,
+    shadowColor: Colors.navbarShadow,
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -123,7 +118,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 2,
   },
   activeTab: {
-    backgroundColor: Colors.light.navbarTabActiveBg,
+    backgroundColor: Colors.navbarTabActiveBg,
     transform: [{ scale: 1.02 }],
   },
   icon: {
@@ -142,10 +137,10 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: Colors.light.navbarCenterButton,
+    backgroundColor: Colors.navbarCenterButton,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: Colors.light.navbarCenterButton,
+    shadowColor: Colors.navbarCenterButton,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 16,
@@ -154,7 +149,7 @@ const styles = StyleSheet.create({
     top: -48,
   },
   centerCircleActive: {
-    backgroundColor: Colors.light.navbarCenterButtonActive,
+    backgroundColor: Colors.navbarCenterButtonActive,
     transform: [{ scale: 1.05 }],
     shadowOpacity: 0.4,
   },

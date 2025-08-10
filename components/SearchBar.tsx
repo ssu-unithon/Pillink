@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, TextInput, StyleSheet, Image } from 'react-native';
-import { Colors } from '../constants/Colors';
+import { Colors } from '@/constants/Colors';
 
 export default function SearchBar({ value, onChangeText, placeholder = '복용하시는 약을 등록해보세요' }: {
   value?: string;
@@ -17,7 +17,7 @@ export default function SearchBar({ value, onChangeText, placeholder = '복용�
       <TextInput
         style={styles.input}
         placeholder={placeholder}
-        placeholderTextColor={Colors.light.mediumGray}
+        placeholderTextColor={Colors.mediumGray}
         value={value}
         onChangeText={onChangeText}
         underlineColorAndroid="transparent"

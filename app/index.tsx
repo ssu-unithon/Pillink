@@ -8,6 +8,7 @@ import BottomNavigationBar from "../components/BottomNavigationBar";
 import SearchBar from '../components/SearchBar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { INTERACTION_DATA } from "@/constants/InteractionData";
 
 // Module-level variable to track if animation has run once per session
 let hasAnimatedOnce = false;
@@ -62,7 +63,7 @@ export default function Index() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.light.background }}>
+    <View style={{ flex: 1, backgroundColor: Colors.background }}>
       <ScrollView
         style={styles.container}
         contentContainerStyle={{ paddingBottom: 120, paddingTop: insets.top + 10 }}
@@ -128,7 +129,7 @@ export default function Index() {
                 <View style={styles.card}>
                     <View style={styles.interactionRiskContent}>
                         <View style={styles.circularGaugeContainer}>
-                        <CircularGauge percentage={79} size={100} />
+                        <CircularGauge value={INTERACTION_DATA.riskScore} size={100} />
                         </View>
                         <View style={styles.interactionRiskGroupsWrapper}>
                         <InteractionRiskGroups />
@@ -143,7 +144,7 @@ export default function Index() {
             <View style={styles.sectionContainer}>
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>건강 뉴스</Text>
-                    <Text style={styles.sectionSubtitle}>유은정님을 위한 맞춤 정보</Text>
+                    <Text style={styles.sectionSubtitle}>��은정님을 위한 맞춤 정보</Text>
                 </View>
                 <TouchableOpacity style={styles.card} activeOpacity={0.8}>
                     <View style={styles.newsContentWrapper}>
@@ -180,7 +181,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: Colors.light.primary,
+    color: Colors.primary,
   },
   headerIcons: {
     flexDirection: 'row',
@@ -192,16 +193,16 @@ const styles = StyleSheet.create({
   greetingText: {
     fontSize: 22,
     fontWeight: '700',
-    color: Colors.light.text,
+    color: Colors.text,
     marginBottom: 6,
   },
   greetingHighlight: {
-    color: Colors.light.primary,
+    color: Colors.primary,
     fontWeight: 'bold',
   },
   greetingSubtext: {
     fontSize: 15,
-    color: Colors.light.mediumGray,
+    color: Colors.mediumGray,
   },
   quickActionsContainer: {
     flexDirection: 'row',
@@ -230,7 +231,7 @@ const styles = StyleSheet.create({
   quickActionText: {
     fontSize: 13,
     fontWeight: '600',
-    color: Colors.light.text,
+    color: Colors.text,
     textAlign: 'center',
   },
   sectionContainer: {
@@ -242,12 +243,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: Colors.light.text,
+    color: Colors.text,
     marginBottom: 4,
   },
   sectionSubtitle: {
     fontSize: 14,
-    color: Colors.light.mediumGray,
+    color: Colors.mediumGray,
   },
   card: {
     backgroundColor: '#fff',
@@ -280,7 +281,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 12,
-    backgroundColor: Colors.light.lightGray,
+    backgroundColor: Colors.lightGray,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
@@ -295,17 +296,17 @@ const styles = StyleSheet.create({
   newsTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.light.text,
+    color: Colors.text,
     marginBottom: 6,
   },
   newsSubtitle: {
     fontSize: 14,
-    color: Colors.light.mediumGray,
+    color: Colors.mediumGray,
     lineHeight: 20,
   },
   newsDate: {
     fontSize: 12,
-    color: Colors.light.mediumGray,
+    color: Colors.mediumGray,
     fontWeight: '500',
     marginTop: 8,
   },

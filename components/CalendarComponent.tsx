@@ -29,10 +29,10 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
   onDayPress
 }) => {
   const defaultMarkedDates = {
-    "2024-08-05": { selected: true, selectedColor: Colors.light.primary },
-    "2024-08-06": { marked: true, dotColor: Colors.light.danger },
-    "2024-08-07": { marked: true, dotColor: Colors.light.secondary },
-    "2024-08-08": { marked: true, dotColor: Colors.light.warning },
+    "2024-08-05": { selected: true, selectedColor: Colors.primary },
+    "2024-08-06": { marked: true, dotColor: Colors.danger },
+    "2024-08-07": { marked: true, dotColor: Colors.secondary },
+    "2024-08-08": { marked: true, dotColor: Colors.warning },
   };
 
   return (
@@ -45,11 +45,11 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
         style={styles.calendar}
         markedDates={markedDates || defaultMarkedDates}
         theme={{
-          todayTextColor: Colors.light.primary,
-          arrowColor: Colors.light.primary,
-          selectedDayBackgroundColor: Colors.light.primary,
-          selectedDayTextColor: Colors.light.background,
-          monthTextColor: Colors.light.text,
+          todayTextColor: Colors.primary,
+          arrowColor: Colors.primary,
+          selectedDayBackgroundColor: Colors.primary,
+          selectedDayTextColor: Colors.background,
+          monthTextColor: Colors.text,
           textDayFontWeight: '500',
           textMonthFontWeight: 'bold',
           textDayHeaderFontWeight: '600',
@@ -72,12 +72,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: Colors.light.text,
+    color: Colors.text,
     marginBottom: 4,
   },
   sectionSubtitle: {
     fontSize: 14,
-    color: Colors.light.mediumGray,
+    color: Colors.mediumGray,
     fontWeight: '400',
   },
   calendar: {
