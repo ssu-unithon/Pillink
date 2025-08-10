@@ -62,7 +62,7 @@ export default function FamilyAlarmScreen() {
           <MaterialIcons
             name={alarm.icon as any}
             size={24}
-            color={alarm.enabled ? '#4285F4' : '#9CA3AF'}
+            color={alarm.enabled ? Colors.primary : '#9CA3AF'}
           />
         </View>
         <View style={styles.alarmInfo}>
@@ -81,16 +81,10 @@ export default function FamilyAlarmScreen() {
           <Switch
             value={alarm.enabled}
             onValueChange={() => toggleAlarm(alarm.id)}
-            trackColor={{ false: '#E5E7EB', true: '#BFDBFE' }}
-            thumbColor={alarm.enabled ? '#4285F4' : '#6B7280'}
+            trackColor={{ false: '#E5E7EB', true: Colors.primary + '33' }}
+            thumbColor={alarm.enabled ? Colors.primary : '#6B7280'}
             style={styles.switch}
           />
-          <View style={styles.statusBadge}>
-            <View style={[
-              styles.statusDot,
-              { backgroundColor: alarm.enabled ? '#10B981' : '#EF4444' }
-            ]} />
-          </View>
         </View>
       </View>
     </TouchableOpacity>
@@ -157,38 +151,6 @@ export default function FamilyAlarmScreen() {
               <Text style={styles.emptySubtext}>+ 버튼을 눌러 약물을 추가해보세요</Text>
             </View>
           )}
-        </View>
-
-        {/* 빠른 설정 */}
-        <View style={styles.quickSettings}>
-          <Text style={styles.sectionTitle}>빠른 설정</Text>
-
-          <TouchableOpacity style={styles.settingItem}>
-            <MaterialIcons name="schedule" size={24} color="#4285F4" />
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingTitle}>알림 간격</Text>
-              <Text style={styles.settingDescription}>5분 전 미리 알림</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.settingItem}>
-            <MaterialIcons name="repeat" size={24} color="#4285F4" />
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingTitle}>반복 알림</Text>
-              <Text style={styles.settingDescription}>3회 반복</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.settingItem}>
-            <MaterialIcons name="volume-up" size={24} color="#6B7280" />
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingTitle}>알림음 설정</Text>
-              <Text style={styles.settingDescription}>기본</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-          </TouchableOpacity>
         </View>
       </ScrollView>
       <BottomNavigationBar activeIndex={4} />
@@ -302,13 +264,13 @@ const styles = StyleSheet.create({
   },
   alarmCard: {
     backgroundColor: '#fff',
-    borderRadius: 16,
+    borderRadius: 12,
     marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowRadius: 4,
+    elevation: 1,
   },
   alarmContent: {
     flexDirection: 'row',
@@ -319,7 +281,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#F0F8FF',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
@@ -335,13 +297,13 @@ const styles = StyleSheet.create({
   alarmDescription: {
     fontSize: 14,
     color: '#6B7280',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   alarmTime: {
     fontSize: 14,
     color: '#4285F4',
-    fontWeight: '600',
-    marginBottom: 4,
+    fontWeight: '500',
+    marginBottom: 2,
   },
   notesText: {
     fontSize: 12,
@@ -350,73 +312,32 @@ const styles = StyleSheet.create({
   },
   rightSection: {
     alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 12,
   },
   switch: {
-    marginBottom: 8,
-  },
-  statusBadge: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  quickSettings: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    marginBottom: 32,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  settingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  settingInfo: {
-    flex: 1,
-    marginLeft: 16,
-  },
-  settingTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 2,
-  },
-  settingDescription: {
-    fontSize: 14,
-    color: '#6B7280',
+    marginBottom: 0,
   },
   emptyState: {
     alignItems: 'center',
-    paddingVertical: 40,
-    paddingHorizontal: 20,
+    justifyContent: 'center',
+    paddingVertical: 48,
+    backgroundColor: '#fff',
+    borderRadius: 12,
   },
   emptyText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#9CA3AF',
     marginTop: 16,
-    marginBottom: 4,
+    marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
     color: '#D1D5DB',
-    textAlign: 'center',
   },
   errorText: {
     fontSize: 16,
     color: '#EF4444',
     textAlign: 'center',
-    marginTop: 100,
+    marginTop: 48,
   },
 });

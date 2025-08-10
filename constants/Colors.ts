@@ -32,7 +32,6 @@ export const Colors = {
   navbarCenterButtonActive: '#0051D0',
   navbarShadow: '#000',
   textSecondary: '#6B7280',
-  accent: '#10B981',
   card: '#FFFFFF',
   shadow: 'rgba(0, 0, 0, 0.1)',
 };
