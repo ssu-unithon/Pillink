@@ -1,8 +1,11 @@
-
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import StepHeader from '@/components/signup/StepHeader';
+import ProgressBar from '@/components/signup/ProgressBar';
+import PrimaryButton from '@/components/PrimaryButton';
+import { Colors } from '@/constants/Colors';
 
 const DISEASES = [
   '당뇨병', '고혈압', '무릎관절증', '만성요통',
@@ -22,96 +25,155 @@ export default function SignupUserInfo() {
   const [rrn1, setRrn1] = useState('');
   const [rrn2, setRrn2] = useState('');
   const [phone, setPhone] = useState('');
+  const [nameError, setNameError] = useState('');
+  const [rrnError, setRrnError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  const [selectedDiseases, setSelectedDiseases] = useState<string[]>([]);
+  const [selectedAllergies, setSelectedAllergies] = useState<string[]>([]);
+
+  const validateName = () => {
+    if (name.trim() === '') {
+      setNameError('이름을 입력해주세요.');
+      return false;
+    } else {
+      setNameError('');
+      return true;
+    }
+  };
+
+  const validateRrn = () => {
+    if (rrn1.trim().length !== 6 || rrn2.trim().length !== 1) {
+      setRrnError('주민등록번호를 올바르게 입력해주세요.');
+      return false;
+    } else {
+      setRrnError('');
+      return true;
+    }
+  };
+
+  const validatePhone = () => {
+    const phoneRegex = /^010\d{8}$/;
+    if (!phoneRegex.test(phone)) {
+      setPhoneError('휴대전화번호를 올바르게 입력해주세요.');
+      return false;
+    } else {
+      setPhoneError('');
+      return true;
+    }
+  };
+
+  const handleNext = () => {
+    const isNameValid = validateName();
+    const isRrnValid = validateRrn();
+    const isPhoneValid = validatePhone();
+
+    if (isNameValid && isRrnValid && isPhoneValid) {
+      router.push('/signup/complete');
+    }
+  };
+
+  const toggleDisease = (disease: string) => {
+    setSelectedDiseases(prev => 
+      prev.includes(disease) ? prev.filter(d => d !== disease) : [...prev, disease]
+    );
+  };
+
+  const toggleAllergy = (allergy: string) => {
+    setSelectedAllergies(prev =>
+      prev.includes(allergy) ? prev.filter(a => a !== allergy) : [...prev, allergy]
+    );
+  };
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={28} color="#222" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>정보입력</Text>
-        <View style={{ width: 28 }} />
-      </View>
+    <View style={styles.container}>
+      <StepHeader title="정보입력" />
+      <ProgressBar progress={70} />
 
-      {/* Progress Bar */}
-      <View style={styles.progressBarBg}>
-        <View style={[styles.progressBar, { width: '70%' }]} />
-      </View>
-
-      {/* Input Fields */}
-      <View style={styles.section}>
-        <Text style={styles.labelActive}>이름</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="이름을 입력하세요"
-          placeholderTextColor="#C4C4C4"
-          value={name}
-          onChangeText={setName}
-        />
-        <Text style={styles.labelActive}>주민등록번호</Text>
-        <View style={styles.rrnRow}>
+      <ScrollView style={styles.content}>
+        {/* Input Fields */}
+        <View style={styles.section}>
+          <Text style={styles.label}>이름</Text>
           <TextInput
-            style={[styles.input, { flex: 1 }]}
-            placeholder="앞 6자리"
-            value={rrn1}
-            onChangeText={setRrn1}
-            keyboardType="number-pad"
-            maxLength={6}
+            style={[styles.input, nameError ? styles.inputError : null]}
+            placeholder="이름을 입력하세요"
+            placeholderTextColor="#9CA3AF"
+            value={name}
+            onChangeText={setName}
+            onBlur={validateName}
           />
-          <Text style={styles.rrnDash}>-</Text>
+          {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
+
+          <Text style={styles.label}>주민등록번호</Text>
+          <View style={styles.rrnRow}>
+            <TextInput
+              style={[styles.input, styles.rrnInput, rrnError ? styles.inputError : null]}
+              placeholder="앞 6자리"
+              placeholderTextColor="#9CA3AF"
+              value={rrn1}
+              onChangeText={setRrn1}
+              keyboardType="number-pad"
+              maxLength={6}
+              onBlur={validateRrn}
+            />
+            <Text style={styles.rrnDash}>-</Text>
+            <TextInput
+              style={[styles.input, styles.rrnInput, rrnError ? styles.inputError : null]}
+              placeholder="뒤 1자리"
+              placeholderTextColor="#9CA3AF"
+              value={rrn2}
+              onChangeText={setRrn2}
+              keyboardType="number-pad"
+              maxLength={1}
+              secureTextEntry
+              onBlur={validateRrn}
+            />
+          </View>
+          {rrnError ? <Text style={styles.errorText}>{rrnError}</Text> : null}
+
+          <Text style={styles.label}>휴대전화번호</Text>
           <TextInput
-            style={[styles.input, { flex: 1 }]}
-            placeholder="뒤 7자리"
-            value={rrn2}
-            onChangeText={setRrn2}
-            keyboardType="number-pad"
-            maxLength={7}
-            secureTextEntry
+            style={[styles.input, phoneError ? styles.inputError : null]}
+            placeholder="ex) 01012345678"
+            placeholderTextColor="#9CA3AF"
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
+            onBlur={validatePhone}
           />
+          {phoneError ? <Text style={styles.errorText}>{phoneError}</Text> : null}
         </View>
-        <Text style={styles.labelActive}>휴대전화번호</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="ex) 01012345678"
-          placeholderTextColor="#C4C4C4"
-          value={phone}
-          onChangeText={setPhone}
-          keyboardType="phone-pad"
-        />
-      </View>
 
-      {/* Disease Selection */}
-      <View style={styles.section}>
-        <Text style={styles.title}>가지고 계신 <Text style={styles.blue}>질환</Text>이 있다면 선택해주세요</Text>
-        <View style={styles.grid}>
-          {DISEASES.map((d, i) => (
-            <TouchableOpacity key={i} style={styles.chipBtn}>
-              <Text style={styles.chipText}>{d}</Text>
-            </TouchableOpacity>
-          ))}
+        {/* Disease Selection */}
+        <View style={styles.section}>
+          <Text style={styles.title}>가지고 계신 <Text style={styles.highlight}>질환</Text>이 있다면 선택해주세요</Text>
+          <View style={styles.chipContainer}>
+            {DISEASES.map((d, i) => (
+              <TouchableOpacity key={i} onPress={() => toggleDisease(d)} style={[styles.chip, selectedDiseases.includes(d) && styles.chipSelected]}>
+                <Text style={[styles.chipText, selectedDiseases.includes(d) && styles.chipTextSelected]}>{d}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <Text style={styles.linkText}>찾는 질환이 없나요?</Text>
         </View>
-        <Text style={styles.subText}>찾는 질환이 없나요?</Text>
-      </View>
 
-      {/* Allergy Selection */}
-      <View style={styles.section}>
-        <Text style={styles.title}>가지고 계신 <Text style={styles.blue}>알러지</Text>가 있다면 선택해주세요</Text>
-        <View style={styles.grid}>
-          {ALLERGIES.map((a, i) => (
-            <TouchableOpacity key={i} style={styles.chipBtn}>
-              <Text style={styles.chipText}>{a}</Text>
-            </TouchableOpacity>
-          ))}
+        {/* Allergy Selection */}
+        <View style={styles.section}>
+          <Text style={styles.title}>가지고 계신 <Text style={styles.highlight}>알러지</Text>가 있다면 선택해주세요</Text>
+          <View style={styles.chipContainer}>
+            {ALLERGIES.map((a, i) => (
+              <TouchableOpacity key={i} onPress={() => toggleAllergy(a)} style={[styles.chip, selectedAllergies.includes(a) && styles.chipSelected]}>
+                <Text style={[styles.chipText, selectedAllergies.includes(a) && styles.chipTextSelected]}>{a}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <Text style={styles.linkText}>찾는 알러지가 없나요?</Text>
         </View>
-        <Text style={styles.subText}>찾는 알러지가 없나요?</Text>
-      </View>
+      </ScrollView>
 
-      {/* Next Button */}
-      <TouchableOpacity style={styles.nextBtn} onPress={() => router.push('/signup/complete')}>
-        <Text style={styles.nextBtnText}>다음</Text>
-      </TouchableOpacity>
-    </ScrollView>
+      <View style={styles.bottomContainer}>
+        <PrimaryButton title="다음" onPress={handleNext} />
+      </View>
+    </View>
   );
 }
 
@@ -120,115 +182,90 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 56,
+  content: {
+    flex: 1,
     paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#111',
-  },
-  progressBarBg: {
-    height: 10,
-    backgroundColor: '#F1F3F6',
-    borderRadius: 5,
-    marginHorizontal: 20,
-    marginBottom: 24,
-    marginTop: 0,
-  },
-  progressBar: {
-    width: '70%',
-    height: 10,
-    backgroundColor: '#1976F7',
-    borderRadius: 5,
+    paddingVertical: 32,
   },
   section: {
-    marginHorizontal: 20,
     marginBottom: 24,
   },
-  labelActive: {
+  label: {
     fontSize: 16,
-    color: '#1976F7',
-    fontWeight: 'bold',
-    marginTop: 12,
-    marginBottom: 4,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 8,
   },
   input: {
-    borderBottomWidth: 1.5,
-    borderBottomColor: '#C4C4C4',
-    fontSize: 18,
-    paddingVertical: 10,
-    marginBottom: 8,
-    color: '#222',
+    height: 48,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  inputError: {
+    borderColor: 'red',
   },
   rrnRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
+  },
+  rrnInput: {
+    flex: 1,
   },
   rrnDash: {
-    fontSize: 22,
-    color: '#888',
-    marginHorizontal: 8,
+    fontSize: 18,
+    color: '#9CA3AF',
+    marginHorizontal: 12,
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 12,
+    marginBottom: 8,
   },
   title: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#111',
-    marginTop: 12,
     marginBottom: 16,
   },
-  blue: {
-    color: '#1976F7',
+  highlight: {
+    color: '#6366F1',
   },
-  grid: {
+  chipContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'flex-start',
-    marginBottom: 12,
   },
-  chipBtn: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+  chip: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     marginRight: 12,
     marginBottom: 12,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#eee',
+  },
+  chipSelected: {
+    backgroundColor: '#6366F1',
   },
   chipText: {
-    fontSize: 16,
-    color: '#222',
-    fontWeight: 'bold',
-  },
-  subText: {
     fontSize: 14,
-    color: '#888',
-    textDecorationLine: 'underline',
+    fontWeight: '600',
+    color: '#374151',
   },
-  nextBtn: {
-    backgroundColor: '#1976F7',
-    borderRadius: 18,
-    paddingVertical: 22,
-    marginHorizontal: 20,
-    marginTop: 24,
-    marginBottom: 40,
-    alignItems: 'center',
-  },
-  nextBtnText: {
-    fontSize: 20,
-    fontWeight: 'bold',
+  chipTextSelected: {
     color: '#fff',
+  },
+  linkText: {
+    fontSize: 14,
+    color: '#6B7280',
+    textDecorationLine: 'underline',
+    textAlign: 'right',
+  },
+  bottomContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 40,
   },
 });

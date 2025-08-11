@@ -1,47 +1,43 @@
-
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import StepHeader from '@/components/signup/StepHeader';
+import ProgressBar from '@/components/signup/ProgressBar';
+import PrimaryButton from '@/components/PrimaryButton';
+import { Colors } from '@/constants/Colors';
 
 export default function Signup() {
   const router = useRouter();
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={28} color="#222" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>회원가입</Text>
-        <View style={{ width: 28 }} />
+      <StepHeader title="회원가입" subtitle="역할을 선택하고 간편하게 시작하세요" />
+      <ProgressBar progress={25} steps={["역할", "약관", "정보", "완료"]} currentStep={1} />
+
+      <View style={styles.content}>
+        {/* Role Selection */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.title}>시작할 서비스를 선택해주세요</Text>
+          <View style={styles.roleBtnRow}>
+            <PrimaryButton title="보호자" onPress={() => router.push('/signup/terms')} style={styles.roleBtn} icon="person" />
+            <PrimaryButton title="보호 대상자" onPress={() => router.push('/signup/terms')} style={styles.roleBtn} icon="people" />
+          </View>
+        </View>
+
+        {/* Divider */}
+        <View style={styles.dividerRow}>
+          <View style={styles.divider} />
+          <Text style={styles.dividerText}>또는</Text>
+          <View style={styles.divider} />
+        </View>
+
+        {/* Social Login */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.socialTitle}>아래 방법으로 간편하게 가입할 수 있습니다</Text>
+          <PrimaryButton title="카카오톡으로 로그인" style={styles.socialBtnKakao} icon="chatbubble-ellipses" />
+          <PrimaryButton title="Google로 로그인" style={styles.socialBtnGoogle} icon="logo-google" />
+        </View>
       </View>
-
-      {/* Progress Bar */}
-      <View style={styles.progressBarBg}>
-        <View style={styles.progressBar} />
-      </View>
-
-      {/* Social Login */}
-      <Text style={styles.title}>로그인할 방식을 선택해주세요</Text>
-      <TouchableOpacity style={styles.kakaoBtn}>
-        <Ionicons name="chatbubble" size={24} color="#3C1E1E" />
-        <Text style={styles.kakaoText}>카카오톡으로 로그인</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.googleBtn}>
-        <Ionicons name="logo-google" size={24} color="#222" />
-        <Text style={styles.googleText}>Google로 로그인</Text>
-      </TouchableOpacity>
-
-      {/* Role Selection */}
-      <Text style={styles.title}>시작할 서비스를 선택해주세요</Text>
-      <TouchableOpacity style={styles.roleBtn} onPress={() => router.push('/signup/terms')}>
-        <Text style={styles.roleBtnText}>보호자</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.roleBtn} onPress={() => router.push('/signup/terms')}>
-        <Text style={styles.roleBtnText}>보호 대상자</Text>
-      </TouchableOpacity>
     </View>
   );
 }
@@ -49,104 +45,70 @@ export default function Signup() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    paddingHorizontal: 0,
+    backgroundColor: Colors.background,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 56,
+  content: {
+    flex: 1,
     paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#111',
-  },
-  progressBarBg: {
-    height: 10,
-    backgroundColor: '#F1F3F6',
-    borderRadius: 5,
-    marginHorizontal: 20,
-    marginBottom: 36,
-    marginTop: 0,
-  },
-  progressBar: {
-    width: '25%',
-    height: 10,
-    backgroundColor: '#1976F7',
-    borderRadius: 5,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#111',
-    marginTop: 24,
-    marginBottom: 24,
-    alignSelf: 'center',
-  },
-  kakaoBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEE500',
-    borderRadius: 18,
-    paddingVertical: 20,
-    paddingHorizontal: 24,
-    marginHorizontal: 20,
-    marginBottom: 16,
+    paddingVertical: 32,
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
+  },
+  sectionCard: {
+    backgroundColor: Colors.card,
+    borderRadius: 16,
+    padding: 24,
+    marginBottom: 28,
+    shadowColor: Colors.shadow,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
     elevation: 2,
   },
-  kakaoText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#3C1E1E',
-    marginLeft: 8,
-  },
-  googleBtn: {
+  roleBtnRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 18,
-    paddingVertical: 20,
-    paddingHorizontal: 24,
-    marginHorizontal: 20,
-    borderWidth: 1.5,
-    borderColor: '#D1D5DB',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 2,
-    marginBottom: 32,
-  },
-  googleText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#222',
-    marginLeft: 8,
+    justifyContent: 'space-between',
+    gap: 16,
   },
   roleBtn: {
-    backgroundColor: '#1976F7',
-    borderRadius: 18,
-    paddingVertical: 24,
-    marginHorizontal: 20,
-    marginBottom: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    flex: 1,
+    marginHorizontal: 4,
+    minHeight: 48,
+    backgroundColor: Colors.primary,
   },
-  roleBtnText: {
-    fontSize: 20,
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 16,
+  },
+  divider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.border,
+  },
+  dividerText: {
+    marginHorizontal: 12,
+    color: Colors.mediumGray,
+    fontSize: 14,
+  },
+  title: {
+    fontSize: 22,
     fontWeight: 'bold',
-    color: '#fff',
+    color: Colors.text,
+    marginBottom: 18,
+    textAlign: 'center',
+  },
+  socialTitle: {
+    fontSize: 16,
+    color: Colors.textSecondary,
+    marginBottom: 18,
+    textAlign: 'center',
+  },
+  socialBtnKakao: {
+    backgroundColor: '#FEE500',
+    marginBottom: 12,
+  },
+  socialBtnGoogle: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
 });

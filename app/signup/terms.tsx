@@ -1,13 +1,16 @@
-
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import StepHeader from '@/components/signup/StepHeader';
+import ProgressBar from '@/components/signup/ProgressBar';
+import PrimaryButton from '@/components/PrimaryButton';
+import {Colors} from '@/constants/Colors';
 
 export default function SignupTerms() {
   const router = useRouter();
   const [allAgreed, setAllAgreed] = useState(false);
-
+  const [agreed, setAgreed] = useState([false, false, false, false]);
   const terms = [
     '개인정보 처리 목적',
     '개인정보처리및보유기간',
@@ -16,44 +19,45 @@ export default function SignupTerms() {
   ];
 
   const handleAllAgree = () => {
-    setAllAgreed(!allAgreed);
+    const newValue = !allAgreed;
+    setAllAgreed(newValue);
+    setAgreed(agreed.map(() => newValue));
+  };
+  const handleAgree = idx => {
+    const newAgreed = [...agreed];
+    newAgreed[idx] = !newAgreed[idx];
+    setAgreed(newAgreed);
+    setAllAgreed(newAgreed.every(Boolean));
   };
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={28} color="#222" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>약관동의</Text>
-        <View style={{ width: 28 }} />
-      </View>
+      <StepHeader title="약관동의" subtitle="서비스 이용을 위해 약관에 동의해주세요" />
+      <ProgressBar progress={35} steps={["역할", "약관", "정보", "완료"]} currentStep={2} />
 
-      {/* Progress Bar */}
-      <View style={styles.progressBarBg}>
-        <View style={[styles.progressBar, { width: '35%' }]} />
-      </View>
+      <ScrollView style={styles.content}>
+        <View style={styles.card}>
+          <TouchableOpacity style={styles.termRow} onPress={handleAllAgree}>
+            <Ionicons name={allAgreed ? "checkbox" : "checkbox-outline"} size={28} color={Colors.primary} style={{ marginRight: 16 }} />
+            <Text style={[styles.allAgreeText, { color: Colors.primary, fontWeight: 'bold' }]}>전체 약관에 동의합니다</Text>
+          </TouchableOpacity>
+          <View style={styles.divider} />
+          {terms.map((t, i) => (
+            <View style={styles.termRow} key={i}>
+              <TouchableOpacity onPress={() => handleAgree(i)} style={styles.checkBoxBtn}>
+                <Ionicons name={agreed[i] ? "checkbox" : "checkbox-outline"} size={24} color={Colors.primary} />
+              </TouchableOpacity>
+              <Text style={styles.termText}>(필수) {t}</Text>
+              <TouchableOpacity style={styles.detailBtn}><Text style={styles.detailBtnText}>상세보기</Text></TouchableOpacity>
+            </View>
+          ))}
+        </View>
+        <Text style={styles.guideText}>모든 약관에 동의해야 다음 단계로 이동할 수 있습니다.</Text>
+      </ScrollView>
 
-      {/* Card */}
-      <View style={styles.card}>
-        <TouchableOpacity style={styles.termRow} onPress={handleAllAgree}>
-          <Ionicons name={allAgreed ? "checkbox" : "checkbox-outline"} size={24} color="#1976F7" style={{ marginRight: 12 }} />
-          <Text style={styles.allAgreeText}><Text style={{ fontWeight: 'bold' }}>전체 동의합니다.</Text></Text>
-        </TouchableOpacity>
-        <View style={styles.divider} />
-        {terms.map((t, i) => (
-          <View style={styles.termRow} key={i}>
-            <Ionicons name="checkmark" size={20} color="#1976F7" style={{ marginRight: 8 }} />
-            <Text style={styles.termText}>(필수) {t}</Text>
-          </View>
-        ))}
+      <View style={styles.bottomContainer}>
+        <PrimaryButton title="다음" onPress={() => router.push('/signup/user-info')} disabled={!allAgreed} style={allAgreed ? styles.nextBtn : styles.nextBtnDisabled} />
       </View>
-
-      {/* Next Button */}
-      <TouchableOpacity style={[styles.nextBtn, { backgroundColor: allAgreed ? '#1976F7' : '#ddd' }]} disabled={!allAgreed} onPress={() => router.push('/signup/user-info')}>
-        <Text style={styles.nextBtnText}>다음</Text>
-      </TouchableOpacity>
     </View>
   );
 }
@@ -61,74 +65,69 @@ export default function SignupTerms() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 56,
+  content: {
+    flex: 1,
     paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#111',
-  },
-  progressBarBg: {
-    height: 10,
-    backgroundColor: '#F1F3F6',
-    borderRadius: 5,
-    marginHorizontal: 20,
-    marginBottom: 36,
-    marginTop: 0,
-  },
-  progressBar: {
-    width: '35%',
-    height: 10,
-    backgroundColor: '#1976F7',
-    borderRadius: 5,
+    paddingTop: 24,
   },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 24,
-    marginHorizontal: 20,
-    padding: 28,
-    shadowColor: '#000',
+    backgroundColor: Colors.card,
+    borderRadius: 16,
+    padding: 24,
+    marginBottom: 20,
+    shadowColor: Colors.shadow,
     shadowOpacity: 0.06,
     shadowRadius: 8,
-    elevation: 3,
-    marginBottom: 32,
+    elevation: 2,
   },
   termRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
   },
+  checkBoxBtn: {
+    marginRight: 12,
+    padding: 4,
+  },
   allAgreeText: {
     fontSize: 18,
-    color: '#222',
+    color: Colors.primary,
   },
   termText: {
-    fontSize: 16,
-    color: '#222',
+    fontSize: 15,
+    color: Colors.primary,
+    flex: 1,
+  },
+  detailBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  detailBtnText: {
+    color: Colors.mediumGray,
+    fontSize: 13,
+    textDecorationLine: 'underline',
   },
   divider: {
     height: 1,
-    backgroundColor: '#eee',
-    marginVertical: 12,
+    backgroundColor: Colors.border,
+    marginVertical: 10,
+  },
+  guideText: {
+    color: Colors.textSecondary,
+    fontSize: 13,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  bottomContainer: {
+    padding: 20,
+    backgroundColor: 'transparent',
   },
   nextBtn: {
-    borderRadius: 18,
-    paddingVertical: 22,
-    marginHorizontal: 20,
-    marginTop: 24,
-    alignItems: 'center',
+    backgroundColor: Colors.primary,
   },
-  nextBtnText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
+  nextBtnDisabled: {
+    backgroundColor: Colors.lightGray,
   },
 });
