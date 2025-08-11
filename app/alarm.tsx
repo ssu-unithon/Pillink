@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import CustomSwitch from '../components/CustomSwitch';
 import { useFamilyData, FamilyDataContextType } from '@/contexts/FamilyDataContext';
 
 export default function AddAlarmScreen() {
-  const [medicine, setMedicine] = useState('');
+  const params = useLocalSearchParams();
+  const [medicine, setMedicine] = useState(params.medicine ? String(params.medicine) : '');
   const [time, setTime] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
   const [repeat, setRepeat] = useState('안 함');

@@ -13,6 +13,7 @@ import { FAMILY_DATA } from "@/constants/FamilyData";
 import FamilyGroup from "@/components/FamilyGroup";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FAMILY_INTERACTION_DATA } from "@/constants/InteractionData";
+import { USER_NAME } from '@/constants/UserInfo';
 
 // Module-level variable to track if animation has run once per session
 let hasAnimatedOnce = false;
@@ -102,7 +103,7 @@ export default function Index() {
         <AnimatedSection index={2} shouldAnimate={!hasAnimatedOnce}>
             <View style={styles.greetingContainer}>
             <Text style={styles.greetingText}>
-                안녕하세요, <Text style={styles.greetingHighlight}>유은정님!</Text>
+                안녕하세요, <Text style={styles.greetingHighlight}>{USER_NAME}님!</Text>
             </Text>
             <Text style={styles.greetingSubtext}>
                 오늘도 건강한 하루 되세요 ✨
@@ -161,7 +162,7 @@ export default function Index() {
             <View style={styles.sectionContainer}>
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>건강 뉴스</Text>
-                    <Text style={styles.sectionSubtitle}>��은정님을 위한 맞춤 정보</Text>
+                    <Text style={styles.sectionSubtitle}>{USER_NAME}님을 위한 맞춤 정보</Text>
                 </View>
                 <TouchableOpacity style={styles.card} activeOpacity={0.8}>
                     <View style={styles.newsContentWrapper}>
@@ -177,18 +178,6 @@ export default function Index() {
                 </TouchableOpacity>
             </View>
         </AnimatedSection>
-
-        {/* FamilyGroup Section */}
-        {/* 가족 목록(프로필에서만 사용) - 홈에서는 제거됨 */}
-        {/* <AnimatedSection index={7} shouldAnimate={!hasAnimatedOnce}>
-          <FamilyGroup
-            data={FAMILY_DATA}
-            onSelectMember={async (id) => {
-              setSelectedId(id);
-              await AsyncStorage.setItem('selected_family_id', id);
-            }}
-          />
-        </AnimatedSection> */}
       </ScrollView>
       <BottomNavigationBar />
     </View>

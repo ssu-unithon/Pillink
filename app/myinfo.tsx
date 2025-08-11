@@ -54,7 +54,7 @@ export default function MyInfoScreen() {
   };
 
   const handleAddAlarmNavigation = () => {
-    router.push('/add-alarm');
+    router.push('/alarm');
   };
 
   const handleSelectFamily = async (id: string) => {
@@ -263,4 +263,3 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
 });
-
