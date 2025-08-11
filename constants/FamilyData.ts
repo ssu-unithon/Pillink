@@ -14,7 +14,6 @@ export interface FamilyMember {
   name: string;
   active: boolean;
   phone?: string;
-  relation?: string;
   email?: string;
   medications?: MedicationInfo[];
 }
@@ -27,7 +26,6 @@ export const FAMILY_DATA: FamilyMember[] = [
     name: '오말숙',
     active: true,
     phone: '010-1234-5678',
-    relation: '어머니',
     email: 'omalsook@example.com',
     medications: [
       {
@@ -67,7 +65,6 @@ export const FAMILY_DATA: FamilyMember[] = [
     name: '남지윤',
     active: false,
     phone: '010-2345-6789',
-    relation: '배우자',
     email: 'namjiyoon@example.com',
     medications: [
       {
@@ -97,7 +94,6 @@ export const FAMILY_DATA: FamilyMember[] = [
     name: '홍준우',
     active: false,
     phone: '010-3456-7890',
-    relation: '아들',
     email: 'hongjunwoo@example.com',
     medications: [
       {
@@ -117,7 +113,6 @@ export const FAMILY_DATA: FamilyMember[] = [
     name: '이수아',
     active: false,
     phone: '010-4567-8901',
-    relation: '딸',
     email: 'isooa@example.com',
     medications: [
       {

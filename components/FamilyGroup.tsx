@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export function FamilyAvatar({ name, active, style }: { name: string; active?: boolean; style?: any }) {
   return (
     <View style={[styles.circle, active && styles.avatarActive, style]}>
-      <Text style={styles.avatarText}>{name[0]}</Text>
+      <Text style={[styles.avatarText, { textAlignVertical: 'center' }]}>{name[0]}</Text>
     </View>
   );
 }
@@ -83,15 +83,7 @@ const FamilyGroup = ({ data, showAvatars = true, onSelectMember, selectedId }: {
           onPress={() => router.push(`/family/${item.id}`)}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          {selectedId === item.id ? (
-            <View style={styles.notificationBadge}>
-              <Ionicons name="notifications" size={20} color="#10B981" />
-            </View>
-          ) : (
-            <View style={styles.notificationBadgeOff}>
-              <MaterialIcons name="notifications-off" size={20} color="#EF4444" />
-            </View>
-          )}
+          <MaterialIcons name="settings" size={20} color="#9CA3AF" />
         </TouchableOpacity>
       </View>
     );

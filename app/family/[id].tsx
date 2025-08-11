@@ -99,7 +99,7 @@ export default function FamilyAlarmScreen() {
           >
             <Ionicons name="arrow-back" size={24} color="#1F2937" />
           </TouchableOpacity>
-          <Text style={styles.title}>복용 알림 설정</Text>
+          <Text style={styles.title}>설정</Text>
           <View style={{ width: 40, height: 40 }} />
         </View>
 
@@ -112,7 +112,7 @@ export default function FamilyAlarmScreen() {
           />
           <View style={styles.profileInfo}>
             <Text style={styles.memberName}>{familyMember.name}</Text>
-            <Text style={styles.memberRelation}>{familyMember.relation} • 복용 알림</Text>
+            <Text style={styles.memberRelation}>{familyMember.relation}복용 알림</Text>
           </View>
         </View>
 

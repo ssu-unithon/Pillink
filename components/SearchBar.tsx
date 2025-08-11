@@ -21,6 +21,8 @@ export default function SearchBar({ value, onChangeText, placeholder = '복용�
         value={value}
         onChangeText={onChangeText}
         underlineColorAndroid="transparent"
+        returnKeyType="search"
+        clearButtonMode="while-editing"
       />
     </View>
   );
