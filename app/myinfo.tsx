@@ -7,8 +7,9 @@ import { useDeveloperMode } from '@/contexts/DevModeContext';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useState, useEffect } from 'react';
 
-function OverlappingAvatars({ data }: { data: any[] }) {
+function OverlappingAvatars({ data, selectedId }: { data: any[]; selectedId: string | null }) {
   const familyMembers = data.filter(item => item.id !== 'invite');
   const totalWidth = (familyMembers.length - 1) * 28 + 48; // 겹침 간격 * (개수-1) + 마지막 아바타 너비
 
@@ -18,7 +19,7 @@ function OverlappingAvatars({ data }: { data: any[] }) {
         <FamilyAvatar
           key={item.id}
           name={item.name}
-          active={item.active}
+          active={selectedId === item.id}
           style={{ left: idx * 28, zIndex: familyMembers.length - idx, position: 'absolute' }}
         />
       ))}
@@ -29,6 +30,14 @@ function OverlappingAvatars({ data }: { data: any[] }) {
 export default function MyInfoScreen() {
   const { isDeveloperMode, toggleDeveloperMode } = useDeveloperMode();
   const router = useRouter();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const savedId = await AsyncStorage.getItem('selected_family_id');
+      setSelectedId(savedId || null);
+    })();
+  }, []);
 
   const handleDeveloperModeToggle = () => {
     console.log('INFO: 개발자 모드:', isDeveloperMode);
@@ -38,10 +47,19 @@ export default function MyInfoScreen() {
   const handleOnboardingNavigation = async () => {
     try {
       await AsyncStorage.setItem('onboarding_completed', 'false');
-      router.replace('/onboarding');
+      router.push('/onboarding');
     } catch (error) {
       console.error('Failed to navigate to onboarding:', error);
     }
+  };
+
+  const handleAddAlarmNavigation = () => {
+    router.push('/add-alarm');
+  };
+
+  const handleSelectFamily = async (id: string) => {
+    setSelectedId(id);
+    await AsyncStorage.setItem('selected_family_id', id);
   };
 
   return (
@@ -54,9 +72,14 @@ export default function MyInfoScreen() {
         <Text style={styles.title}>내 정보</Text>
         <Text style={styles.subtitle}>프로필 및 설정</Text>
 
-        <OverlappingAvatars data={FAMILY_DATA} />
+        <OverlappingAvatars data={FAMILY_DATA} selectedId={selectedId} />
         <View style={styles.familyGroupWrapper}>
-          <FamilyGroup data={FAMILY_DATA} showAvatars={true} />
+          <FamilyGroup
+            data={FAMILY_DATA}
+            showAvatars={true}
+            onSelectMember={handleSelectFamily}
+            selectedId={selectedId}
+          />
         </View>
 
         {/* 개발자 모드 섹션 */}
@@ -80,14 +103,24 @@ export default function MyInfoScreen() {
           </TouchableOpacity>
 
           {isDeveloperMode && (
-            <TouchableOpacity
-              style={styles.onboardingButton}
-              onPress={handleOnboardingNavigation}
-              activeOpacity={0.7}
-            >
-              <MaterialIcons name="school" size={24} color="#F59E0B" />
-              <Text style={styles.onboardingButtonText}>온보딩 화면 보기</Text>
-            </TouchableOpacity>
+            <>
+              <TouchableOpacity
+                style={styles.onboardingButton}
+                onPress={handleOnboardingNavigation}
+                activeOpacity={0.7}
+              >
+                <MaterialIcons name="school" size={24} color="#F59E0B" />
+                <Text style={styles.onboardingButtonText}>온보딩 화면 보기</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.onboardingButton, { marginTop: 8, backgroundColor: '#E0F2FE', borderColor: '#38BDF8' }]}
+                onPress={handleAddAlarmNavigation}
+                activeOpacity={0.7}
+              >
+                <MaterialIcons name="alarm-add" size={24} color="#38BDF8" />
+                <Text style={[styles.onboardingButtonText, { color: '#38BDF8' }]}>알람 추가 화면</Text>
+              </TouchableOpacity>
+            </>
           )}
         </View>
       </ScrollView>
@@ -107,7 +140,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 48,
-    paddingBottom: 100, // 네비바와 겹치지 않도록 충분한 여백 추가
+    paddingBottom: 100,
     alignItems: 'center',
   },
   title: {
@@ -132,7 +165,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     height: 44,
     position: 'relative',
-    alignSelf: 'center', // 가운데 정렬
+    alignSelf: 'center',
   },
   avatarCount: {
     width: 28,
@@ -197,12 +230,12 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
     width: '90%',
-    marginBottom: 20, // 추가 여백
+    marginBottom: 20,
   },
   developerModeButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16, // 터치 영역 확장
+    paddingVertical: 16,
     paddingHorizontal: 16,
     backgroundColor: '#F9FAFB',
     borderRadius: 12,
@@ -216,7 +249,7 @@ const styles = StyleSheet.create({
   onboardingButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16, // 터치 영역 확장
+    paddingVertical: 16,
     paddingHorizontal: 16,
     backgroundColor: '#FEF3C7',
     borderRadius: 12,
@@ -230,3 +263,4 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
 });
+

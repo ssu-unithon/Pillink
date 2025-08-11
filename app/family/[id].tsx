@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import BottomNavigationBar from '../../components/BottomNavigationBar';
+import CustomSwitch from '@/components/CustomSwitch';
 import { FamilyAvatar } from '@/components/FamilyGroup';
 import {
   getFamilyMemberById,
@@ -78,12 +79,9 @@ export default function FamilyAlarmScreen() {
           )}
         </View>
         <View style={styles.rightSection}>
-          <Switch
+          <CustomSwitch
             value={alarm.enabled}
             onValueChange={() => toggleAlarm(alarm.id)}
-            trackColor={{ false: '#E5E7EB', true: Colors.primary + '33' }}
-            thumbColor={alarm.enabled ? Colors.primary : '#6B7280'}
-            style={styles.switch}
           />
         </View>
       </View>
@@ -101,13 +99,8 @@ export default function FamilyAlarmScreen() {
           >
             <Ionicons name="arrow-back" size={24} color="#1F2937" />
           </TouchableOpacity>
-          <Text style={styles.title}>복용 알림 설정</Text>
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => console.log('새 약물 추가')}
-          >
-            <Ionicons name="add" size={24} color="#4285F4" />
-          </TouchableOpacity>
+          <Text style={styles.title}>설정</Text>
+          <View style={{ width: 40, height: 40 }} />
         </View>
 
         {/* 프로필 섹션 */}
@@ -119,7 +112,6 @@ export default function FamilyAlarmScreen() {
           />
           <View style={styles.profileInfo}>
             <Text style={styles.memberName}>{familyMember.name}</Text>
-            <Text style={styles.memberRelation}>{familyMember.relation} • 복용 알림</Text>
           </View>
         </View>
 
@@ -194,6 +186,8 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     color: '#1F2937',
+    flex: 1,
+    textAlign: 'center',
   },
   profileSection: {
     flexDirection: 'row',
