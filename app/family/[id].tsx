@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
@@ -20,6 +20,8 @@ export default function FamilyAlarmScreen() {
   const [alarms, setAlarms] = useState<MedicationInfo[]>(
     getMedicationsByMemberId(id as string)
   );
+  const [isDeleteMode, setIsDeleteMode] = useState(false);
+  const [selectedMedications, setSelectedMedications] = useState<string[]>([]);
 
   if (!familyMember) {
     return (
@@ -51,13 +53,55 @@ export default function FamilyAlarmScreen() {
     }
   };
 
+  const toggleDeleteMode = () => {
+    setIsDeleteMode(prev => !prev);
+    setSelectedMedications([]); // Clear selection when toggling mode
+  };
+
+  const toggleMedicationSelection = (medicationId: string) => {
+    setSelectedMedications(prev =>
+      prev.includes(medicationId)
+        ? prev.filter(id => id !== medicationId)
+        : [...prev, medicationId]
+    );
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedMedications.length === 0) {
+      Alert.alert('선택된 약물 없음', '삭제할 약물을 선택해주세요.');
+      return;
+    }
+    Alert.alert(
+      '약물 삭제',
+      `선택된 약물 ${selectedMedications.length}개를 삭제하시겠습니까?`,
+      [
+        { text: '취소', style: 'cancel' },
+        { text: '삭제', onPress: () => {
+            // Implement actual deletion logic here
+            setAlarms(prev => prev.filter(alarm => !selectedMedications.includes(alarm.id)));
+            setIsDeleteMode(false);
+            setSelectedMedications([]);
+            Alert.alert('삭제 완료', '선택된 약물이 삭제되었습니다.');
+          }, style: 'destructive' },
+      ]
+    );
+  };
+
   const renderMedicationAlarm = (alarm: MedicationInfo) => (
     <TouchableOpacity
       key={alarm.id}
       style={styles.alarmCard}
-      onPress={() => router.push(`/family/${id}/medication`)}
+      onPress={() => isDeleteMode ? toggleMedicationSelection(alarm.id) : router.push(`/add-alarm?medicationId=${alarm.id}&familyId=${id}`)}
       activeOpacity={0.7}
     >
+      {isDeleteMode && (
+        <Ionicons
+          name={selectedMedications.includes(alarm.id) ? "checkbox-outline" : "square-outline"}
+          size={24}
+          color={Colors.primary}
+          style={styles.checkboxIcon}
+        />
+      )}
       <View style={styles.alarmContent}>
         <View style={styles.alarmIcon}>
           <MaterialIcons
@@ -79,10 +123,12 @@ export default function FamilyAlarmScreen() {
           )}
         </View>
         <View style={styles.rightSection}>
-          <CustomSwitch
-            value={alarm.enabled}
-            onValueChange={() => toggleAlarm(alarm.id)}
-          />
+          {!isDeleteMode && (
+            <CustomSwitch
+              value={alarm.enabled}
+              onValueChange={() => toggleAlarm(alarm.id)}
+            />
+          )}
         </View>
       </View>
     </TouchableOpacity>
@@ -133,7 +179,24 @@ export default function FamilyAlarmScreen() {
 
         {/* 약물 알림 목록 */}
         <View style={styles.alarmsSection}>
-          <Text style={styles.sectionTitle}>복용 중인 약물</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>복용 중인 약물</Text>
+            <View style={styles.sectionActions}>
+              <TouchableOpacity onPress={() => router.push(`/add-alarm?familyId=${id}`)} style={styles.actionButton}>
+                <Ionicons name="add-circle-outline" size={24} color={Colors.primary} />
+                <Text style={styles.actionButtonText}>추가</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={toggleDeleteMode} style={styles.actionButton}>
+                <Ionicons name="remove-circle-outline" size={24} color={Colors.danger} />
+                <Text style={styles.actionButtonText}>삭제</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+          {isDeleteMode && selectedMedications.length > 0 && (
+            <TouchableOpacity onPress={handleDeleteSelected} style={styles.deleteConfirmButton}>
+              <Text style={styles.deleteConfirmButtonText}>선택된 약물 삭제 ({selectedMedications.length})</Text>
+            </TouchableOpacity>
+          )}
           {alarms.length > 0 ? (
             alarms.map(renderMedicationAlarm)
           ) : (
@@ -256,6 +319,36 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     marginBottom: 16,
   },
+  sectionActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0F8FF',
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  actionButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.primary,
+    marginLeft: 4,
+  },
+  deleteConfirmButton: {
+    backgroundColor: Colors.danger,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  deleteConfirmButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   alarmCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
@@ -265,11 +358,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 1,
-  },
-  alarmContent: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
+  },
+  checkboxIcon: {
+    marginRight: 12,
+  },
+  alarmContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   alarmIcon: {
     width: 48,
