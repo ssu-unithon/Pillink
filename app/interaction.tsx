@@ -7,9 +7,11 @@ import InteractionRiskGroups from '../components/InteractionRiskGroups';
 import InteractionWarning from '../components/InteractionWarning';
 import BottomNavigationBar from '../components/BottomNavigationBar';
 import { INTERACTION_DATA } from '@/constants/InteractionData';
+import { useRouter } from 'expo-router';
 
 export default function InteractionScreen() {
   const [selectedGroup, setSelectedGroup] = useState<'risk' | 'safe' | null>(null);
+  const router = useRouter();
 
   // 그룹 버튼 클릭 핸들러
   const handleGroupPress = (groupType: 'risk' | 'safe') => {
@@ -35,7 +37,7 @@ export default function InteractionScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Search Bar - 최상단으로 이동 */}
-        <SearchBar placeholder="약물명을 검색하세요" />
+        <SearchBar placeholder="약물명을 검색하세요" onPressPlus={() => router.push('/add-alarm')} />
 
         {/* Header */}
         <View style={styles.header}>
