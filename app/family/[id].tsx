@@ -112,7 +112,6 @@ export default function FamilyAlarmScreen() {
           />
           <View style={styles.profileInfo}>
             <Text style={styles.memberName}>{familyMember.name}</Text>
-            <Text style={styles.memberRelation}>{familyMember.relation}복용 알림</Text>
           </View>
         </View>
 

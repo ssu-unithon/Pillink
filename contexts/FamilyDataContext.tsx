@@ -1,7 +1,30 @@
 import React, { createContext, useContext, useState } from 'react';
 import { FAMILY_DATA } from '@/constants/FamilyData';
 
-const FamilyDataContext = createContext(null);
+// 타입 정의
+interface MedicationInfo {
+  id: string;
+  medicationName: string;
+  enabled: boolean;
+  [key: string]: any;
+}
+interface FamilyMember {
+  id: string;
+  name: string;
+  medications?: MedicationInfo[];
+  [key: string]: any;
+}
+interface FamilyDataContextType {
+  familyData: FamilyMember[];
+  updateMedicationEnabled: (userId: string, medicationName: string, enabled: boolean) => void;
+}
+
+const defaultContext: FamilyDataContextType = {
+  familyData: FAMILY_DATA,
+  updateMedicationEnabled: () => {},
+};
+
+const FamilyDataContext = createContext<FamilyDataContextType>(defaultContext);
 
 export const FamilyDataProvider = ({ children }: { children: React.ReactNode }) => {
   const [familyData, setFamilyData] = useState(FAMILY_DATA);
@@ -27,4 +50,4 @@ export const FamilyDataProvider = ({ children }: { children: React.ReactNode }) 
 };
 
 export const useFamilyData = () => useContext(FamilyDataContext);
-
+export { FamilyDataContextType };

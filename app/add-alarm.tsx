@@ -4,7 +4,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import CustomSwitch from '../components/CustomSwitch';
-import { useFamilyData } from '../contexts/FamilyDataContext';
+import { useFamilyData, FamilyDataContextType } from '@/contexts/FamilyDataContext';
 
 export default function AddAlarmScreen() {
   const [medicine, setMedicine] = useState('');
@@ -14,7 +14,7 @@ export default function AddAlarmScreen() {
   const [sound, setSound] = useState('종소리');
   const [snooze, setSnooze] = useState(true);
   const router = useRouter();
-  const { updateMedicationEnabled } = useFamilyData();
+  const { updateMedicationEnabled } = useFamilyData() as FamilyDataContextType;
 
   const onChange = (event: any, selectedDate?: Date) => {
     setShowPicker(Platform.OS === 'ios');
