@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import SearchBar from '../components/SearchBar';
 import CircularGauge from '../components/CircularGauge';
@@ -9,6 +9,7 @@ import BottomNavigationBar from '../components/BottomNavigationBar';
 import { FAMILY_DATA } from '@/constants/FamilyData';
 import { INTERACTION_DATA, FAMILY_INTERACTION_DATA } from '@/constants/InteractionData';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function InteractionScreen() {
   const [selectedGroup, setSelectedGroup] = useState<'risk' | 'safe' | null>(null);
@@ -16,6 +17,16 @@ export default function InteractionScreen() {
   const familyMembers = FAMILY_DATA.filter(m => m.id !== 'invite');
   const [selectedMemberId, setSelectedMemberId] = useState(familyMembers[0]?.id || '1');
   const router = useRouter();
+
+  // AsyncStorage에서 선택된 가족 id를 불러와서 사용
+  useEffect(() => {
+    (async () => {
+      const storedId = await AsyncStorage.getItem('selected_family_id');
+      if (storedId && storedId !== selectedMemberId) {
+        setSelectedMemberId(storedId);
+      }
+    })();
+  }, []);
 
   // 그룹 버튼 클릭 핸들러
   const handleGroupPress = (groupType: 'risk' | 'safe') => {
@@ -40,30 +51,9 @@ export default function InteractionScreen() {
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
       <ScrollView
         style={styles.container}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: 100, paddingTop: Platform.OS === 'ios' ? 48 : 20 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* 구성원 선택 드롭다운/버튼 */}
-        <View style={{ marginBottom: 16 }}>
-          <Text style={{ fontWeight: 'bold', marginBottom: 8 }}>구성원 선택</Text>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            {familyMembers.map(member => (
-              <TouchableOpacity
-                key={member.id}
-                style={{
-                  backgroundColor: selectedMemberId === member.id ? Colors.primary : '#eee',
-                  borderRadius: 8,
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  marginRight: 8,
-                }}
-                onPress={() => setSelectedMemberId(member.id)}
-              >
-                <Text style={{ color: selectedMemberId === member.id ? '#fff' : '#222' }}>{member.name}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>{familyMembers.find(m => m.id === selectedMemberId)?.name || ''}님의 약물 복용 리포트</Text>
@@ -85,13 +75,13 @@ export default function InteractionScreen() {
           </View>
         </View>
         {/* 경고 문구 */}
-        <InteractionWarning />
+        <InteractionWarning riskScore={memberData.riskScore} />
         {/* 선택된 그룹의 상세 정보 표시 */}
         {selectedGroup && (
           <View style={styles.detailContainer}>
             <Text style={styles.detailTitle}>
-              {selectedGroup === 'risk' && '위험 상호작용'}
-              {selectedGroup === 'safe' && '안전 상호작용'}
+              {selectedGroup === 'risk' && '위험/주의 상호작용 상세'}
+              {selectedGroup === 'safe' && '안전 상호작용 상세'}
             </Text>
             {groupData[selectedGroup].map((item, index) => (
               <View key={index} style={styles.detailItem}>
@@ -111,7 +101,38 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 20,
+    // paddingTop 제거 (상단 여백은 contentContainerStyle에서 처리)
+  },
+  memberSelectorWrapper: {
+    marginBottom: 18,
+    marginTop: 4,
+  },
+  memberSelectorScroll: {
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'center',
+    paddingHorizontal: 2,
+  },
+  memberButton: {
+    backgroundColor: '#F2F4F7',
+    borderRadius: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  memberButtonSelected: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  memberButtonText: {
+    color: Colors.text,
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  memberButtonTextSelected: {
+    color: '#fff',
   },
   header: {
     marginBottom: 20,
@@ -141,6 +162,15 @@ const styles = StyleSheet.create({
   gaugeSection: {
     alignItems: 'center',
     marginBottom: 20,
+  },
+  gaugeLabel: {
+    textAlign: 'center',
+    color: Colors.mediumGray,
+    fontSize: 15,
+    marginTop: 8,
+    marginBottom: 4,
+    fontWeight: '500',
+    letterSpacing: 0.2,
   },
   interactionRiskGroupsWrapper: {
     marginTop: 10,

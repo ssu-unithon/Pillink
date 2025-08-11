@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Text, View, ScrollView, StyleSheet, Animated, TouchableOpacity } from "react-native";
 import InteractionRiskGroups from "../components/InteractionRiskGroups";
 import CircularGauge from "../components/CircularGauge";
@@ -9,6 +9,10 @@ import SearchBar from '../components/SearchBar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { INTERACTION_DATA } from "@/constants/InteractionData";
+import { FAMILY_DATA } from "@/constants/FamilyData";
+import FamilyGroup from "@/components/FamilyGroup";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { FAMILY_INTERACTION_DATA } from "@/constants/InteractionData";
 
 // Module-level variable to track if animation has run once per session
 let hasAnimatedOnce = false;
@@ -47,6 +51,16 @@ const AnimatedSection = ({ children, index, shouldAnimate }: { children: React.R
 
 export default function Index() {
   const insets = useSafeAreaInsets();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // 선택된 가족 ID를 AsyncStorage에서 불러오기
+  useEffect(() => {
+    (async () => {
+      const savedId = await AsyncStorage.getItem('selected_family_id');
+      if (savedId) setSelectedId(savedId);
+      else setSelectedId(FAMILY_DATA[1]?.id || null);
+    })();
+  }, []);
 
   // This effect runs only once when the component mounts for the first time in the app session.
   // It sets the flag to true, so subsequent mounts/re-renders won't trigger the animation.
@@ -74,7 +88,7 @@ export default function Index() {
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>PillLink</Text>
                 <View style={styles.headerIcons}>
-                    {/* Icons can be added here */}
+                    {/* 상단 프로필 아바타 삭제됨 */}
                 </View>
             </View>
         </AnimatedSection>
@@ -129,10 +143,13 @@ export default function Index() {
                 <View style={styles.card}>
                     <View style={styles.interactionRiskContent}>
                         <View style={styles.circularGaugeContainer}>
-                        <CircularGauge value={INTERACTION_DATA.riskScore} size={100} />
+                        <CircularGauge value={selectedId && FAMILY_INTERACTION_DATA[selectedId] ? FAMILY_INTERACTION_DATA[selectedId].riskScore : INTERACTION_DATA.riskScore} size={100} />
                         </View>
                         <View style={styles.interactionRiskGroupsWrapper}>
-                        <InteractionRiskGroups />
+                        <InteractionRiskGroups
+                          dangerousCount={selectedId && FAMILY_INTERACTION_DATA[selectedId] ? FAMILY_INTERACTION_DATA[selectedId].dangerousCount : INTERACTION_DATA.dangerousCount}
+                          safeCount={selectedId && FAMILY_INTERACTION_DATA[selectedId] ? FAMILY_INTERACTION_DATA[selectedId].safeCount : INTERACTION_DATA.safeCount}
+                        />
                         </View>
                     </View>
                 </View>
@@ -160,6 +177,18 @@ export default function Index() {
                 </TouchableOpacity>
             </View>
         </AnimatedSection>
+
+        {/* FamilyGroup Section */}
+        {/* 가족 목록(프로필에서만 사용) - 홈에서는 제거됨 */}
+        {/* <AnimatedSection index={7} shouldAnimate={!hasAnimatedOnce}>
+          <FamilyGroup
+            data={FAMILY_DATA}
+            onSelectMember={async (id) => {
+              setSelectedId(id);
+              await AsyncStorage.setItem('selected_family_id', id);
+            }}
+          />
+        </AnimatedSection> */}
       </ScrollView>
       <BottomNavigationBar />
     </View>

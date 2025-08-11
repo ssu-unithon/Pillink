@@ -7,8 +7,9 @@ import { useDeveloperMode } from '@/contexts/DevModeContext';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useState, useEffect } from 'react';
 
-function OverlappingAvatars({ data }: { data: any[] }) {
+function OverlappingAvatars({ data, selectedId }: { data: any[]; selectedId: string | null }) {
   const familyMembers = data.filter(item => item.id !== 'invite');
   const totalWidth = (familyMembers.length - 1) * 28 + 48; // 겹침 간격 * (개수-1) + 마지막 아바타 너비
 
@@ -18,7 +19,7 @@ function OverlappingAvatars({ data }: { data: any[] }) {
         <FamilyAvatar
           key={item.id}
           name={item.name}
-          active={item.active}
+          active={selectedId === item.id}
           style={{ left: idx * 28, zIndex: familyMembers.length - idx, position: 'absolute' }}
         />
       ))}
@@ -29,6 +30,14 @@ function OverlappingAvatars({ data }: { data: any[] }) {
 export default function MyInfoScreen() {
   const { isDeveloperMode, toggleDeveloperMode } = useDeveloperMode();
   const router = useRouter();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const savedId = await AsyncStorage.getItem('selected_family_id');
+      setSelectedId(savedId || null);
+    })();
+  }, []);
 
   const handleDeveloperModeToggle = () => {
     console.log('INFO: 개발자 모드:', isDeveloperMode);
@@ -48,6 +57,10 @@ export default function MyInfoScreen() {
     router.push('/add-alarm');
   };
 
+  const handleSelectFamily = async (id: string) => {
+    setSelectedId(id);
+    await AsyncStorage.setItem('selected_family_id', id);
+  };
 
   return (
     <View style={styles.container}>
@@ -59,9 +72,14 @@ export default function MyInfoScreen() {
         <Text style={styles.title}>내 정보</Text>
         <Text style={styles.subtitle}>프로필 및 설정</Text>
 
-        <OverlappingAvatars data={FAMILY_DATA} />
+        <OverlappingAvatars data={FAMILY_DATA} selectedId={selectedId} />
         <View style={styles.familyGroupWrapper}>
-          <FamilyGroup data={FAMILY_DATA} showAvatars={true} />
+          <FamilyGroup
+            data={FAMILY_DATA}
+            showAvatars={true}
+            onSelectMember={handleSelectFamily}
+            selectedId={selectedId}
+          />
         </View>
 
         {/* 개발자 모드 섹션 */}

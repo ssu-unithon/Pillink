@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-import { FAMILY_DATA } from '../constants/FamilyData';
+import { FAMILY_DATA } from '@/constants/FamilyData';
 
 const FamilyDataContext = createContext(null);
 
