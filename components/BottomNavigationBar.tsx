@@ -17,6 +17,7 @@ const labels = ['홈', '약물관리', '추가', '채팅', '내정보'];
 export default function BottomNavigationBar({ activeIndex = 0, onTabPress }: { activeIndex?: number; onTabPress?: (idx: number) => void }) {
   const router = useRouter();
   const [isFloatingMenuOpen, setIsFloatingMenuOpen] = useState(false);
+  const [showFloatingButtons, setShowFloatingButtons] = useState(false);
   const floatingAnimation1 = useRef(new Animated.Value(0)).current;
   const floatingAnimation2 = useRef(new Animated.Value(0)).current;
   const rotateAnimation = useRef(new Animated.Value(0)).current;
@@ -24,9 +25,7 @@ export default function BottomNavigationBar({ activeIndex = 0, onTabPress }: { a
 
   const toggleFloatingMenu = () => {
     const isOpening = !isFloatingMenuOpen;
-    setIsFloatingMenuOpen(isOpening);
-
-    // 플로팅 버튼들 애니메이션
+    // 애니메이션만 먼저 실행
     Animated.parallel([
       Animated.timing(floatingAnimation1, {
         toValue: isOpening ? 1 : 0,
@@ -48,8 +47,21 @@ export default function BottomNavigationBar({ activeIndex = 0, onTabPress }: { a
         duration: 200,
         useNativeDriver: true,
       }),
-    ]).start();
+    ]).start(() => {
+      // 애니메이션이 끝난 후 상태 변경
+      setIsFloatingMenuOpen(isOpening);
+    });
   };
+
+  React.useEffect(() => {
+    if (isFloatingMenuOpen) {
+      setShowFloatingButtons(true);
+    } else {
+      // 200ms 후에 버튼 제거
+      const timeout = setTimeout(() => setShowFloatingButtons(false), 200);
+      return () => clearTimeout(timeout);
+    }
+  }, [isFloatingMenuOpen]);
 
   const handleTabPress = async (idx: number) => {
     if (onTabPress) onTabPress(idx);
@@ -65,19 +77,19 @@ export default function BottomNavigationBar({ activeIndex = 0, onTabPress }: { a
     // 라우팅 로직
     switch (idx) {
       case 0:
-        router.replace('/');
+        router.push('/');
         break;
       case 1:
-        router.replace('/interaction');
+        router.push('/interaction');
         break;
       case 2:
         toggleFloatingMenu();
         break;
       case 3:
-        router.replace('/chat');
+        router.push('/chat');
         break;
       case 4:
-        router.replace('/myinfo');
+        router.push('/myinfo');
         break;
     }
   };
@@ -215,7 +227,7 @@ export default function BottomNavigationBar({ activeIndex = 0, onTabPress }: { a
           );
         })}
 
-        {isFloatingMenuOpen && (
+        {showFloatingButtons && (
           <>
             {/* 검색 버튼과 라벨 */}
             <Animated.View style={[styles.floatingButtonContainer, styles.floatingButtonZ, floatingButton1Style]}>
