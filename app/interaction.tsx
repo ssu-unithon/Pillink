@@ -1,16 +1,20 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import SearchBar from '../components/SearchBar';
 import CircularGauge from '../components/CircularGauge';
 import InteractionRiskGroups from '../components/InteractionRiskGroups';
 import InteractionWarning from '../components/InteractionWarning';
 import BottomNavigationBar from '../components/BottomNavigationBar';
-import { INTERACTION_DATA } from '@/constants/InteractionData';
+import { FAMILY_DATA } from '@/constants/FamilyData';
+import { INTERACTION_DATA, FAMILY_INTERACTION_DATA } from '@/constants/InteractionData';
 import { useRouter } from 'expo-router';
 
 export default function InteractionScreen() {
   const [selectedGroup, setSelectedGroup] = useState<'risk' | 'safe' | null>(null);
+  // 구성원 선택 상태 추가 (기본값: 첫 번째 실제 구성원)
+  const familyMembers = FAMILY_DATA.filter(m => m.id !== 'invite');
+  const [selectedMemberId, setSelectedMemberId] = useState(familyMembers[0]?.id || '1');
   const router = useRouter();
 
   // 그룹 버튼 클릭 핸들러
@@ -19,13 +23,16 @@ export default function InteractionScreen() {
     setSelectedGroup(newSelection);
   };
 
-  // 각 그룹별 데이터
+  // 선택된 구성원의 상호작용 데이터
+  const memberData = FAMILY_INTERACTION_DATA[selectedMemberId] || FAMILY_INTERACTION_DATA['1'];
+
+  // 기존 요소에서 위험/안전 데이터만 연결 (선택된 구성원의 데이터 사용)
   const groupData = {
     risk: [
-      { name: '메트포르민 + 알코올', description: '저혈당 위험 증가', type: '위험' },
+      { name: '위험/주의 상호작용', description: `위험: ${memberData.dangerousCount}건`, type: '위험' },
     ],
     safe: [
-      { name: '비타민 D + 칼슘', description: '뼈 건강 증진 효과', type: '안전' },
+      { name: '안전 상호작용', description: `안전: ${memberData.safeCount}건`, type: '안전' },
     ],
   };
 
@@ -36,32 +43,49 @@ export default function InteractionScreen() {
         contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Search Bar - 최상단으로 이동 */}
-        <SearchBar placeholder="약물명을 검색하세요" onPressPlus={() => router.push('/add-alarm')} />
-
+        {/* 구성원 선택 드롭다운/버튼 */}
+        <View style={{ marginBottom: 16 }}>
+          <Text style={{ fontWeight: 'bold', marginBottom: 8 }}>구성원 선택</Text>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {familyMembers.map(member => (
+              <TouchableOpacity
+                key={member.id}
+                style={{
+                  backgroundColor: selectedMemberId === member.id ? Colors.primary : '#eee',
+                  borderRadius: 8,
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  marginRight: 8,
+                }}
+                onPress={() => setSelectedMemberId(member.id)}
+              >
+                <Text style={{ color: selectedMemberId === member.id ? '#fff' : '#222' }}>{member.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>오말순님의 약물 복용 리포트</Text>
+          <Text style={styles.headerTitle}>{familyMembers.find(m => m.id === selectedMemberId)?.name || ''}님의 약물 복용 리포트</Text>
           <Text style={styles.headerSubtitle}>복용 중인 약물들의 상호작용을 확인하세요</Text>
         </View>
-
         {/* 상호작용 안전도 */}
         <View style={styles.sectionContainer}>
           <View style={styles.gaugeSection}>
-            <CircularGauge value={INTERACTION_DATA.riskScore} size={180} />
+            <CircularGauge value={memberData.riskScore} size={180} />
           </View>
           <View style={styles.interactionRiskGroupsWrapper}>
             <InteractionRiskGroups
               interactable={true}
               onGroupPress={handleGroupPress}
               selectedGroup={selectedGroup}
+              dangerousCount={memberData.dangerousCount}
+              safeCount={memberData.safeCount}
             />
           </View>
         </View>
-
         {/* 경고 문구 */}
         <InteractionWarning />
-
         {/* 선택된 그룹의 상세 정보 표시 */}
         {selectedGroup && (
           <View style={styles.detailContainer}>

@@ -4,6 +4,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import CustomSwitch from '../components/CustomSwitch';
+import { useFamilyData } from '../contexts/FamilyDataContext';
 
 export default function AddAlarmScreen() {
   const [medicine, setMedicine] = useState('');
@@ -13,10 +14,17 @@ export default function AddAlarmScreen() {
   const [sound, setSound] = useState('종소리');
   const [snooze, setSnooze] = useState(true);
   const router = useRouter();
+  const { updateMedicationEnabled } = useFamilyData();
 
   const onChange = (event: any, selectedDate?: Date) => {
     setShowPicker(Platform.OS === 'ios');
     if (selectedDate) setTime(selectedDate);
+  };
+
+  const handleSave = () => {
+    // 예시: 본인 id '1', 실제 앱에서는 로그인/선택된 사용자 id 사용
+    updateMedicationEnabled('1', medicine, snooze);
+    router.back();
   };
 
   return (
@@ -73,7 +81,7 @@ export default function AddAlarmScreen() {
         </View>
       </View>
       {/* 저장 버튼 */}
-      <TouchableOpacity style={styles.saveButton}>
+      <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
         <Text style={styles.saveButtonText}>저장</Text>
       </TouchableOpacity>
     </View>

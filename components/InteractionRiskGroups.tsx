@@ -7,15 +7,17 @@ interface InteractionRiskGroupsProps {
   onGroupPress?: (groupType: 'risk' | 'safe') => void;
   interactable?: boolean;
   selectedGroup?: 'risk' | 'safe' | null;
+  dangerousCount?: number;
+  safeCount?: number;
 }
 
-const InteractionRiskGroups = ({ onGroupPress, interactable = false, selectedGroup = null }: InteractionRiskGroupsProps) => {
-  // Constants에서 실제 데이터 사용 (중복 항목 제거)
+const InteractionRiskGroups = ({ onGroupPress, interactable = false, selectedGroup = null, dangerousCount, safeCount }: InteractionRiskGroupsProps) => {
+  // dangerousCount, safeCount가 있으면 사용, 없으면 INTERACTION_DATA fallback
   const groups = [
     {
       key: 'risk' as const,
       title: '위험',
-      count: `${INTERACTION_DATA.dangerousCount}건`,
+      count: `${dangerousCount ?? INTERACTION_DATA.dangerousCount}건`,
       pillBg: Colors.dangerLight,
       pillColor: Colors.danger,
       activeBg: '#FF5050',
@@ -24,7 +26,7 @@ const InteractionRiskGroups = ({ onGroupPress, interactable = false, selectedGro
     {
       key: 'safe' as const,
       title: '안전',
-      count: `${INTERACTION_DATA.safeCount}건`,
+      count: `${safeCount ?? INTERACTION_DATA.safeCount}건`,
       pillBg: Colors.secondaryLight,
       pillColor: Colors.secondary,
       activeBg: '#2DB67D',

@@ -4,6 +4,7 @@ import { View, ActivityIndicator } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Colors } from "@/constants/Colors";
 import { DevModeProvider } from "@/contexts/DevModeContext";
+import { FamilyDataProvider } from '@/contexts/FamilyDataContext';
 
 const ONBOARDING_COMPLETED_KEY = "onboarding_completed";
 
@@ -79,7 +80,9 @@ function RootLayoutNav() {
 export default function RootLayout() {
   return (
     <DevModeProvider>
-      <RootLayoutNav />
+      <FamilyDataProvider>
+        <RootLayoutNav />
+      </FamilyDataProvider>
     </DevModeProvider>
   );
 }
