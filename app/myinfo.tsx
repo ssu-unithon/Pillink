@@ -57,6 +57,10 @@ export default function MyInfoScreen() {
     router.push('/alarm');
   };
 
+  const handleSignupNavigation = () => {
+    router.push('/signup');
+  };
+
   const handleSelectFamily = async (id: string) => {
     setSelectedId(id);
     await AsyncStorage.setItem('selected_family_id', id);
@@ -119,6 +123,14 @@ export default function MyInfoScreen() {
               >
                 <MaterialIcons name="alarm-add" size={24} color="#38BDF8" />
                 <Text style={[styles.onboardingButtonText, { color: '#38BDF8' }]}>알람 추가 화면</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.onboardingButton, { marginTop: 8, backgroundColor: '#FDF2F8', borderColor: '#EC4899' }]}
+                onPress={handleSignupNavigation}
+                activeOpacity={0.7}
+              >
+                <MaterialIcons name="person-add" size={24} color="#EC4899" />
+                <Text style={[styles.onboardingButtonText, { color: '#EC4899' }]}>회원가입 창</Text>
               </TouchableOpacity>
             </>
           )}

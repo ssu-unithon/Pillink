@@ -218,3 +218,80 @@ export const updateMemberAllergies = (memberId: string, allergies: string[]): bo
   }
   return false;
 };
+
+// 특정 가족 구성원에게 약물 추가
+export const addMedicationToMember = (memberId: string, medicationData: {
+  id: string;
+  name: string;
+  type: string;
+  company: string;
+  dosage?: string;
+  frequency?: string;
+  startDate?: string;
+  endDate?: string;
+  notes?: string;
+  time?: string;
+}): boolean => {
+  const memberIndex = FAMILY_DATA.findIndex(member => member.id === memberId);
+  if (memberIndex !== -1 && memberIndex !== 0) { // invite 항목 제외
+    const member = FAMILY_DATA[memberIndex];
+    
+    // 기존 medications 배열이 없으면 생성
+    if (!member.medications) {
+      member.medications = [];
+    }
+    
+    // 새 약물 정보 생성 (기존 MedicationInfo 인터페이스에 맞춤)
+    const newMedication: MedicationInfo = {
+      id: `${memberId}-${Date.now()}`, // 고유 ID 생성
+      medicationName: medicationData.name,
+      time: medicationData.time || '08:00',
+      dosage: medicationData.dosage || '1정',
+      enabled: true,
+      frequency: 'daily',
+      notes: medicationData.notes || '',
+      icon: 'medication'
+    };
+    
+    // 약물 추가
+    member.medications.push(newMedication);
+    return true;
+  }
+  return false;
+};
+
+// 특정 가족 구성원의 약물 제거
+export const removeMedicationFromMember = (memberId: string, medicationId: string): boolean => {
+  const memberIndex = FAMILY_DATA.findIndex(member => member.id === memberId);
+  if (memberIndex !== -1 && memberIndex !== 0) { // invite 항목 제외
+    const member = FAMILY_DATA[memberIndex];
+    if (member.medications) {
+      const medicationIndex = member.medications.findIndex(med => med.id === medicationId);
+      if (medicationIndex !== -1) {
+        member.medications.splice(medicationIndex, 1);
+        return true;
+      }
+    }
+  }
+  return false;
+};
+
+// 특정 가족 구성원의 약물 정보 업데이트
+export const updateMedicationInfo = (memberId: string, medicationId: string, updates: Partial<MedicationInfo>): boolean => {
+  const memberIndex = FAMILY_DATA.findIndex(member => member.id === memberId);
+  if (memberIndex !== -1 && memberIndex !== 0) { // invite 항목 제외
+    const member = FAMILY_DATA[memberIndex];
+    if (member.medications) {
+      const medicationIndex = member.medications.findIndex(med => med.id === medicationId);
+      if (medicationIndex !== -1) {
+        // 기존 약물 정보와 업데이트된 정보 병합
+        member.medications[medicationIndex] = {
+          ...member.medications[medicationIndex],
+          ...updates
+        };
+        return true;
+      }
+    }
+  }
+  return false;
+};

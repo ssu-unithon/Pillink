@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import StepHeader from '@/components/signup/StepHeader';
 import ProgressBar from '@/components/signup/ProgressBar';
@@ -21,6 +21,7 @@ const ALLERGIES = [
 
 export default function SignupUserInfo() {
   const router = useRouter();
+  const { role } = useLocalSearchParams();
   const [name, setName] = useState('');
   const [rrn1, setRrn1] = useState('');
   const [rrn2, setRrn2] = useState('');
@@ -98,7 +99,7 @@ export default function SignupUserInfo() {
   return (
     <View style={styles.container}>
       <StepHeader title="정보입력" subtitle="개인정보와 질환정보를 입력해주세요" />
-      <ProgressBar progress={70} steps={["역할", "약관", "정보", "완료"]} currentStep={3} />
+      <ProgressBar progress={80} steps={["소셜", "역할", "약관", "정보", "완료"]} currentStep={3} />
 
       <ScrollView style={styles.content}>
         {/* Input Fields */}
@@ -154,31 +155,35 @@ export default function SignupUserInfo() {
           {phoneError ? <Text style={styles.errorText}>{phoneError}</Text> : null}
         </View>
 
-        {/* Disease Selection */}
-        <View style={styles.section}>
-          <Text style={styles.title}>가지고 계신 <Text style={styles.highlight}>질환</Text>이 있다면 선택해주세요</Text>
-          <View style={styles.chipContainer}>
-            {DISEASES.map((d, i) => (
-              <TouchableOpacity key={i} onPress={() => toggleDisease(d)} style={[styles.chip, selectedDiseases.includes(d) && styles.chipSelected]}>
-                <Text style={[styles.chipText, selectedDiseases.includes(d) && styles.chipTextSelected]}>{d}</Text>
-              </TouchableOpacity>
-            ))}
+        {/* Disease Selection - 보호자일 때만 표시 */}
+        {role === 'guardian' && (
+          <View style={styles.section}>
+            <Text style={styles.title}>가지고 계신 <Text style={styles.highlight}>질환</Text>이 있다면 선택해주세요</Text>
+            <View style={styles.chipContainer}>
+              {DISEASES.map((d, i) => (
+                <TouchableOpacity key={i} onPress={() => toggleDisease(d)} style={[styles.chip, selectedDiseases.includes(d) && styles.chipSelected]}>
+                  <Text style={[styles.chipText, selectedDiseases.includes(d) && styles.chipTextSelected]}>{d}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={styles.linkText}>찾는 질환이 없나요?</Text>
           </View>
-          <Text style={styles.linkText}>찾는 질환이 없나요?</Text>
-        </View>
+        )}
 
-        {/* Allergy Selection */}
-        <View style={styles.section}>
-          <Text style={styles.title}>가지고 계신 <Text style={styles.highlight}>알러지</Text>가 있다면 선택해주세요</Text>
-          <View style={styles.chipContainer}>
-            {ALLERGIES.map((a, i) => (
-              <TouchableOpacity key={i} onPress={() => toggleAllergy(a)} style={[styles.chip, selectedAllergies.includes(a) && styles.chipSelected]}>
-                <Text style={[styles.chipText, selectedAllergies.includes(a) && styles.chipTextSelected]}>{a}</Text>
-              </TouchableOpacity>
-            ))}
+        {/* Allergy Selection - 보호자일 때만 표시 */}
+        {role === 'guardian' && (
+          <View style={styles.section}>
+            <Text style={styles.title}>가지고 계신 <Text style={styles.highlight}>알러지</Text>가 있다면 선택해주세요</Text>
+            <View style={styles.chipContainer}>
+              {ALLERGIES.map((a, i) => (
+                <TouchableOpacity key={i} onPress={() => toggleAllergy(a)} style={[styles.chip, selectedAllergies.includes(a) && styles.chipSelected]}>
+                  <Text style={[styles.chipText, selectedAllergies.includes(a) && styles.chipTextSelected]}>{a}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={styles.linkText}>찾는 알러지가 없나요?</Text>
           </View>
-          <Text style={styles.linkText}>찾는 알러지가 없나요?</Text>
-        </View>
+        )}
       </ScrollView>
 
       <View style={styles.bottomContainer}>

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Alert } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import BottomNavigationBar from '../../components/BottomNavigationBar';
@@ -13,6 +13,8 @@ import {
   getAllergiesByMemberId,
   updateMemberDiseases,
   updateMemberAllergies,
+  removeMedicationFromMember,
+  updateMedicationInfo,
   AVAILABLE_DISEASES,
   AVAILABLE_ALLERGIES,
   MedicationInfo
@@ -37,6 +39,16 @@ export default function FamilyAlarmScreen() {
     getAllergiesByMemberId(id as string)
   );
 
+  // FamilyData 변경사항을 실시간으로 반영
+  useFocusEffect(
+    React.useCallback(() => {
+      // 페이지가 포커스될 때마다 데이터 업데이트
+      setAlarms(getMedicationsByMemberId(id as string));
+      setDiseases(getDiseasesByMemberId(id as string));
+      setAllergies(getAllergiesByMemberId(id as string));
+    }, [id])
+  );
+
   if (!familyMember) {
     return (
       <View style={styles.container}>
@@ -49,13 +61,24 @@ export default function FamilyAlarmScreen() {
   }
 
   const toggleAlarm = (alarmId: string) => {
-    setAlarms(prev =>
-      prev.map(alarm =>
-        alarm.id === alarmId
-          ? { ...alarm, enabled: !alarm.enabled }
-          : alarm
-      )
-    );
+    const alarm = alarms.find(a => a.id === alarmId);
+    if (alarm) {
+      const newEnabled = !alarm.enabled;
+      // FamilyData에 업데이트
+      const success = updateMedicationInfo(id as string, alarmId, { enabled: newEnabled });
+      if (success) {
+        // 로컬 상태 업데이트
+        setAlarms(prev =>
+          prev.map(alarm =>
+            alarm.id === alarmId
+              ? { ...alarm, enabled: newEnabled }
+              : alarm
+          )
+        );
+      } else {
+        Alert.alert('오류', '약물 정보 업데이트에 실패했습니다.');
+      }
+    }
   };
 
   const getFrequencyText = (frequency: string) => {
@@ -91,10 +114,22 @@ export default function FamilyAlarmScreen() {
       [
         { text: '취소', style: 'cancel' },
         { text: '삭제', onPress: () => {
-            setAlarms(prev => prev.filter(alarm => !selectedMedications.includes(alarm.id)));
-            setIsDeleteMode(false);
-            setSelectedMedications([]);
-            Alert.alert('삭제 완료', '선택된 약물이 삭제되었습니다.');
+            // FamilyData에서 약물 삭제
+            let successCount = 0;
+            selectedMedications.forEach(medicationId => {
+              const success = removeMedicationFromMember(id as string, medicationId);
+              if (success) successCount++;
+            });
+            
+            if (successCount === selectedMedications.length) {
+              // 로컬 상태 업데이트
+              setAlarms(prev => prev.filter(alarm => !selectedMedications.includes(alarm.id)));
+              setIsDeleteMode(false);
+              setSelectedMedications([]);
+              Alert.alert('삭제 완료', '선택된 약물이 삭제되었습니다.');
+            } else {
+              Alert.alert('삭제 실패', '일부 약물 삭제에 실패했습니다.');
+            }
           }, style: 'destructive' },
       ]
     );

@@ -98,11 +98,11 @@ export default function BottomNavigationBar({ activeIndex = 0, onTabPress }: { a
     toggleFloatingMenu();
     // 여기에 각 버튼별 액션 구현
     if (action === 'search') {
-      // 검색 기능 구현
-      console.log('검색 버튼 클릭');
+      // 직접 입력 기능 구현
+      router.push('/medication-input');
     } else if (action === 'link') {
-      // 링크 기능 구현
-      console.log('링크 버튼 클릭');
+      // 처방전 불러오기 기능 구현
+      router.push('/prescription-import');
     }
   };
 

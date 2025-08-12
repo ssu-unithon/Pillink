@@ -13,7 +13,7 @@ export default function SignupComplete() {
   return (
     <View style={styles.container}>
       <StepHeader title="가입완료" subtitle="환영합니다! 회원가입이 성공적으로 완료되었습니다" />
-      <ProgressBar progress={100} steps={["역할", "약관", "정보", "완료"]} currentStep={4} />
+      <ProgressBar progress={100} steps={["소셜", "역할", "약관", "정보", "완료"]} currentStep={4} />
 
       <View style={styles.content}>
         <View style={styles.centerContent}>
