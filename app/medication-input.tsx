@@ -171,12 +171,8 @@ export default function MedicationInput() {
           // 약물은 성공적으로 추가되었으므로 경고만 표시
         }
         
-        Alert.alert('성공', `${selectedMedication.itemName}이(가) 추가되었습니다.`, [
-          {
-            text: '확인',
-            onPress: () => router.back()
-          }
-        ]);
+        // 성공 시 바로 이전 화면으로 돌아가기
+        router.back();
       } else {
         const errorText = await response.text();
         console.log('Medication add failed:', response.status, response.statusText);

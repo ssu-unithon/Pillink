@@ -11,9 +11,9 @@ import { INTERACTION_DATA } from "@/constants/InteractionData";
 import { FAMILY_DATA } from "@/constants/FamilyData";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FAMILY_INTERACTION_DATA } from "@/constants/InteractionData";
-import { USER_NAME } from '@/constants/UserInfo';
 import { getLatestArticles } from "@/constants/SupplementArticles";
 import { useRouter } from 'expo-router';
+import UserService, { UserInfo } from '@/services/UserService';
 
 // Module-level variable to track if animation has run once per session
 let hasAnimatedOnce = false;
@@ -54,14 +54,26 @@ export default function Index() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string>('사용자'); // 기본값
   const latestArticles = getLatestArticles(1); // 최신 아티클 1개만 가져오기
 
-  // 선택된 가족 ID를 AsyncStorage에서 불러오기
+  // 선택된 가족 ID와 사용자 이름을 AsyncStorage에서 불러오기
   useEffect(() => {
     (async () => {
+      // 가족 ID 불러오기
       const savedId = await AsyncStorage.getItem('selected_family_id');
       if (savedId) setSelectedId(savedId);
       else setSelectedId(FAMILY_DATA[1]?.id || null);
+      
+      // 사용자 이름 불러오기
+      try {
+        const userInfo = await UserService.getCachedUserInfo();
+        if (userInfo && userInfo.name) {
+          setUserName(userInfo.name);
+        }
+      } catch (error) {
+        console.error('Failed to get user name:', error);
+      }
     })();
   }, []);
 
@@ -100,7 +112,7 @@ export default function Index() {
         <AnimatedSection index={2} shouldAnimate={!hasAnimatedOnce}>
             <View style={styles.greetingContainer}>
             <Text style={styles.greetingText}>
-                안녕하세요, <Text style={styles.greetingHighlight}>{USER_NAME}님!</Text>
+                안녕하세요, <Text style={styles.greetingHighlight}>{userName}님!</Text>
             </Text>
             <Text style={styles.greetingSubtext}>
                 오늘도 건강한 하루 되세요 ✨
@@ -159,7 +171,7 @@ export default function Index() {
             <View style={styles.sectionContainer}>
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>영양제 추천</Text>
-                    <Text style={styles.sectionSubtitle}>{USER_NAME}님을 위한 맞춤 건강 정보</Text>
+                    <Text style={styles.sectionSubtitle}>{userName}님을 위한 맞춤 건강 정보</Text>
                 </View>
                 {latestArticles.map((article, index) => (
                     <TouchableOpacity 
