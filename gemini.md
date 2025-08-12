@@ -11,34 +11,33 @@
 
 ## Auth
 
-- [ GET ] /auth/test
 - [ GET ] Google 로그인 `/auth/google`
 - [ GET ] Google 리다이렉션 `/auth/google/redirect`
 - [ POST ] 로그인 `/auth/login`
-    
-    Request
-    
+
+  Request
+
     ```json
     {
       "phone" : "korean1790@gmail.com",
       "password" : "1234"
     }
     ```
-    
-    Response
-    
+
+  Response
+
     - 받은 accessToken은 요청할때 마다 Header > Bearer Token에 넣어주세요
-    
+
     ```json
     {
     	accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NCwiZW1haWwiOiJrb3JlYW4xNzkwQGdtYWlsLmNvbSIsIm5hbWUiOiLsnbTsnqztl4wiLCJyb2xlIjoidXNlciIsImlhdCI6MTc1MTc5NjE2NiwiZXhwIjoxNzUxODEwNTY2fQ.8__MrfJ0oq20P2JU7YA2FhLMRdLVEE6NDtuudQA6i-8"
     }
     ```
-    
+
 - [ POST ]  회원가입 `/auth/register`
-    
-    Request
-    
+
+  Request
+
     ```json
     {
       "phone" : "test2",
@@ -49,9 +48,9 @@
       "diseases" : ["당뇨병", "고혈압"]
     }
     ```
-    
-    Response
-    
+
+  Response
+
     ```json
     {
         "phone": "test2",
@@ -66,16 +65,16 @@
         "role": "보호자"
     }
     ```
-    
+
 - [ DELETE ] 회원탈퇴 `/auth/me`
-    
+
     ```json
     {
         "raw": [],
         "affected": 1
     }
     ```
-    
+
 </aside>
 
 <aside>
@@ -85,7 +84,7 @@
 
 - [ GET ] 약품 검색 `/pill/search`
     - `http://127.0.0.1:3000/pill/search?itemName=`
-    
+
     ```json
     {
         "pageNo": 1,
@@ -128,10 +127,10 @@
     		]
     }
     ```
-    
+
 - [ GET ] 약품 상세 정보 조회 `/pill/item/:itemSeq`
     - `http://127.0.0.1:3000/pill/item/202005623`
-    
+
     ```json
     {
         "entpName": "한국존슨앤드존슨판매(유)",
@@ -150,41 +149,44 @@
         "bizrno": "1068649891"
     }
     ```
-    
+
 - [ GET ] 자신 또는 그룹의 약품 조회 `/pill`
     - `/pill` : 쿼리가 없다면 → 자신의 복용약 목록 조회
     - `/pill?targetId=1` : 쿼리가 있다면 → 해당 사용자의 복용약 목록 조회
-    
+
     ```json
     [
         {
             "id": 2,
             "itemSeq": "202005623",
             "name": "어린이타이레놀산160밀리그램(아세트아미노펜)",
-            "is_pined": false
+            "is_pined": false,
+            "count": 3
         },
         {
             "id": 3,
             "itemSeq": "202106092",
             "name": "타이레놀정500밀리그람(아세트아미노펜)",
-            "is_pined": false
+            "is_pined": false,
+            "count": 3
         }
     ]
     ```
-    
+
 - [ POST ] 그룹 인원에게 약 추가 `/pill`
-    
-    Request
-    
+
+  Request
+
     ```json
     { 
         "targetId": 2,
-        "itemSeq": "202106092" 
+        "itemSeq": "202106092" ,
+        "count": 3
     }
     ```
-    
-    Response
-    
+
+  Response
+
     ```json
     {
         "user": {
@@ -193,10 +195,11 @@
         "name": "타이레놀정500밀리그람(아세트아미노펜)",
         "itemSeq": "202106092",
         "id": 3,
+        "count": 3
         "is_pined": false
     }
     ```
-    
+
 </aside>
 
 <aside>
@@ -205,7 +208,7 @@
 ## Family
 
 - [ GET ] 그룹 조회 `/famliy`
-    
+
     ```json
     {
         "id": 2,
@@ -230,10 +233,10 @@
         }
     }
     ```
-    
+
 - [ GET ] 그룹 초대 `/famliy/invite`
     - `/famliy/invite?targetPhone=guest`
-    
+
     ```json
     {
         "id": 2,
@@ -268,10 +271,10 @@
         }
     }
     ```
-    
+
 - [ GET ] 그룹 탈퇴 `/famliy/leave`
 - [ POST ] 그룹 생성 `/famliy`
-    
+
     ```json
     {
         "name": "게스트의 가족",
@@ -298,7 +301,7 @@
         "id": 2
     }
     ```
-    
+
 </aside>
 
 <aside>
@@ -311,7 +314,7 @@
     - 시간 순 **정렬**
     - targetId가 있다면, 해당 유저의 알림 조회
     - targetId가 없다면, 현재 유저의 알림 조회
-    
+
     ```json
     [
         {
@@ -340,11 +343,11 @@
         },
     ]
     ```
-    
+
 - [ POST ] 알림 생성 `/alarm`
-    
-    Request
-    
+
+  Request
+
     ```json
     {
         "targetId": 1,
@@ -355,9 +358,9 @@
         "count": 2
     }
     ```
-    
-    Response
-    
+
+  Response
+
     ```json
     {
     	"id": 7,
@@ -368,11 +371,11 @@
       "count": 2
     }
     ```
-    
+
 - [ PATCH ] 알림 수정 `/alarm`
-    
-    Request
-    
+
+  Request
+
     ```json
     {
     	alarmId: 1,
@@ -380,7 +383,7 @@
     	minute: 31
     }
     ```
-    
+
 </aside>
 
 <aside>
@@ -389,7 +392,7 @@
 ## Chat
 
 - [ GET ] 채팅 기록 조회 `/chat/histroy`
-    
+
     ```
     [
         {
@@ -406,17 +409,28 @@
         }
     ]
     ```
-    
+
 - [ POST ] 채팅 AI 전송  `/chat`
-    
-    Request
-    
+
+  Request
+
     ```json
     {
     	"content" : "hello world!"
     }
     ```
-    
+
+  Response
+
+    ```json
+    {
+    	"id": 1,
+    	"content": "hello world",
+    	"sender_type": "ai",
+    	"createdAt": "2025-08-09T15:22:38.193Z"
+    }
+    ```
+
 </aside>
 
 <aside>
@@ -426,7 +440,7 @@
 
 - [ GET ] 지정한 달의 복용 기록 `/intake-log`
     - `/intake-log?month=8`
-    
+
     ```json
     [
         {
@@ -495,11 +509,11 @@
         }
     ]
     ```
-    
+
 - [ POST ] 알림 확인 `/intake-log/check`
-    
-    Request
-    
+
+  Request
+
     ```json
     { 
         "month": 8,
@@ -507,9 +521,9 @@
         "alarmId": 7
     }
     ```
-    
-    Response
-    
+
+  Response
+
     ```json
     {
         "id": 2,
@@ -544,5 +558,5 @@
         ]
     }
     ```
-    
+
 </aside>

@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import CustomSwitch from '@/components/CustomSwitch';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import {
   getMedicationsByMemberId,
   MedicationInfo,
   addMedicationToMember,
-  updateMedicationForMember
+  updateMedicationInfo,
+  removeMedicationFromMember
 } from '@/constants/FamilyData';
 
 export default function AddAlarmScreen() {
@@ -18,12 +18,10 @@ export default function AddAlarmScreen() {
   const { medicationId, familyId } = params;
 
   const [medicationName, setMedicationName] = useState('');
-  const [dosage, setDosage] = useState('');
-  const [frequency, setFrequency] = useState('daily'); // daily, weekly, as-needed
-  const [time, setTime] = useState(new Date());
+  const [count, setCount] = useState('1');
+  const [selectedTime, setSelectedTime] = useState('08:00');
   const [notes, setNotes] = useState('');
   const [enabled, setEnabled] = useState(true);
-  const [showTimePicker, setShowTimePicker] = useState(false);
 
   const isEditMode = !!medicationId;
 
@@ -33,49 +31,88 @@ export default function AddAlarmScreen() {
       const existingMedication = existingMedications.find(med => med.id === medicationId);
       if (existingMedication) {
         setMedicationName(existingMedication.medicationName);
-        setDosage(existingMedication.dosage);
-        setFrequency(existingMedication.frequency);
-        setTime(new Date(`2000-01-01T${existingMedication.time}:00`)); // Dummy date for time parsing
+        setCount(existingMedication.dosage?.replace('정', '') || '1');
+        setSelectedTime(existingMedication.time);
         setNotes(existingMedication.notes || '');
         setEnabled(existingMedication.enabled);
       }
     }
   }, [isEditMode, medicationId, familyId]);
 
-  const handleTimeChange = (event: any, selectedDate?: Date) => {
-    const currentDate = selectedDate || time;
-    setShowTimePicker(Platform.OS === 'ios');
-    setTime(currentDate);
-  };
 
-  const formatTimeDisplay = (date: Date) => {
-    return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+  const handleDelete = () => {
+    if (!isEditMode) {
+      console.log('Not in edit mode, cannot delete');
+      return;
+    }
+
+    console.log('Attempting to delete medication:', { familyId, medicationId });
+
+    Alert.alert(
+      '약물 삭제',
+      '이 약물을 삭제하시겠습니까?',
+      [
+        { text: '취소', style: 'cancel' },
+        { 
+          text: '삭제', 
+          style: 'destructive',
+          onPress: () => {
+            console.log('Confirmed deletion, calling removeMedicationFromMember with:', { familyId, medicationId });
+            const success = removeMedicationFromMember(familyId as string, medicationId as string);
+            console.log('Deletion result:', success);
+            
+            if (success) {
+              Alert.alert('삭제 완료', '약물이 성공적으로 삭제되었습니다.', [
+                {
+                  text: '확인',
+                  onPress: () => router.back()
+                }
+              ]);
+            } else {
+              Alert.alert('오류', '약물 삭제에 실패했습니다.');
+            }
+          }
+        }
+      ]
+    );
   };
 
   const handleSave = () => {
-    if (!medicationName.trim() || !dosage.trim()) {
+    if (!medicationName.trim() || !count.trim()) {
       Alert.alert('필수 정보 누락', '약물 이름과 복용량을 입력해주세요.');
       return;
     }
 
-    const newMedication: MedicationInfo = {
-      id: isEditMode ? (medicationId as string) : Date.now().toString(),
-      medicationName,
-      dosage,
-      frequency,
-      time: formatTimeDisplay(time),
-      notes,
-      enabled,
-      icon: 'pill', // Default icon
-    };
-
     if (familyId) {
       if (isEditMode) {
-        updateMedicationForMember(familyId as string, newMedication);
-        Alert.alert('약물 수정 완료', '약물 정보가 성공적으로 수정되었습니다.');
+        const success = updateMedicationInfo(familyId as string, medicationId as string, {
+          medicationName,
+          dosage: `${count}정`,
+          time: selectedTime,
+          notes,
+          enabled
+        });
+        if (success) {
+          Alert.alert('약물 수정 완료', '약물 정보가 성공적으로 수정되었습니다.');
+        } else {
+          Alert.alert('오류', '약물 수정에 실패했습니다.');
+        }
       } else {
-        addMedicationToMember(familyId as string, newMedication);
-        Alert.alert('약물 추가 완료', '새로운 약물이 성공적으로 추가되었습니다.');
+        const medicationData = {
+          id: Date.now().toString(),
+          name: medicationName,
+          type: '일반의약품',
+          company: '',
+          dosage: `${count}정`,
+          time: selectedTime,
+          notes
+        };
+        const success = addMedicationToMember(familyId as string, medicationData);
+        if (success) {
+          Alert.alert('약물 추가 완료', '새로운 약물이 성공적으로 추가되었습니다.');
+        } else {
+          Alert.alert('오류', '약물 추가에 실패했습니다.');
+        }
       }
       router.back();
     } else {
@@ -107,51 +144,38 @@ export default function AddAlarmScreen() {
           />
 
           <Text style={styles.label}>복용량</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="예: 500mg, 1정"
-            placeholderTextColor={Colors.mediumGray}
-            value={dosage}
-            onChangeText={setDosage}
-          />
-
-          <Text style={styles.label}>복용 주기</Text>
-          <View style={styles.frequencyContainer}>
-            <TouchableOpacity
-              style={[styles.frequencyButton, frequency === 'daily' && styles.frequencyButtonActive]}
-              onPress={() => setFrequency('daily')}
-            >
-              <Text style={[styles.frequencyButtonText, frequency === 'daily' && styles.frequencyButtonTextActive]}>매일</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.frequencyButton, frequency === 'weekly' && styles.frequencyButtonActive]}
-              onPress={() => setFrequency('weekly')}
-            >
-              <Text style={[styles.frequencyButtonText, frequency === 'weekly' && styles.frequencyButtonTextActive]}>주간</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.frequencyButton, frequency === 'as-needed' && styles.frequencyButtonActive]}
-              onPress={() => setFrequency('as-needed')}
-            >
-              <Text style={[styles.frequencyButtonText, frequency === 'as-needed' && styles.frequencyButtonTextActive]}>필요시</Text>
-            </TouchableOpacity>
+          <View style={styles.countInputContainer}>
+            <TextInput
+              style={styles.countInput}
+              value={count}
+              onChangeText={setCount}
+              keyboardType="numeric"
+              placeholder="1"
+              placeholderTextColor={Colors.mediumGray}
+            />
+            <Text style={styles.countUnit}>정</Text>
           </View>
 
           <Text style={styles.label}>복용 시간</Text>
-          <TouchableOpacity onPress={() => setShowTimePicker(true)} style={styles.timePickerButton}>
-            <Text style={styles.timePickerButtonText}>{formatTimeDisplay(time)}</Text>
-            <Ionicons name="time-outline" size={24} color={Colors.primary} />
-          </TouchableOpacity>
-          {showTimePicker && (
-            <DateTimePicker
-              testID="timePicker"
-              value={time}
-              mode="time"
-              is24Hour={true}
-              display="default"
-              onChange={handleTimeChange}
-            />
-          )}
+          <View style={styles.timeSelector}>
+            {['08:00', '12:00', '18:00', '22:00'].map((time) => (
+              <TouchableOpacity
+                key={time}
+                style={[
+                  styles.timeOption,
+                  selectedTime === time && styles.timeOptionSelected
+                ]}
+                onPress={() => setSelectedTime(time)}
+              >
+                <Text style={[
+                  styles.timeOptionText,
+                  selectedTime === time && styles.timeOptionTextSelected
+                ]}>
+                  {time}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
           <Text style={styles.label}>메모 (선택 사항)</Text>
           <TextInput
@@ -170,9 +194,16 @@ export default function AddAlarmScreen() {
         </View>
       </ScrollView>
 
-      <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-        <Text style={styles.saveButtonText}>{isEditMode ? '약물 수정' : '약물 추가'}</Text>
-      </TouchableOpacity>
+      <View style={styles.bottomButtons}>
+        {isEditMode && (
+          <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+            <Text style={styles.deleteButtonText}>약물 삭제</Text>
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity style={[styles.saveButton, isEditMode && styles.saveButtonHalf]} onPress={handleSave}>
+          <Text style={styles.saveButtonText}>{isEditMode ? '약물 수정' : '약물 추가'}</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -239,45 +270,55 @@ const styles = StyleSheet.create({
     minHeight: 80,
     textAlignVertical: 'top',
   },
-  frequencyContainer: {
+  countInputContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  frequencyButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: Colors.border,
-    alignItems: 'center',
-    marginHorizontal: 4,
+    borderRadius: 8,
+    backgroundColor: '#fff',
+    paddingHorizontal: 12,
+    height: 50,
+    marginBottom: 16,
   },
-  frequencyButtonActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
+  countInput: {
+    flex: 1,
+    fontSize: 16,
+    color: Colors.text,
+    textAlign: 'center',
   },
-  frequencyButtonText: {
+  countUnit: {
     fontSize: 16,
     fontWeight: '600',
     color: Colors.text,
+    marginLeft: 8,
   },
-  frequencyButtonTextActive: {
-    color: '#fff',
-  },
-  timePickerButton: {
+  timeSelector: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 8,
-    padding: 12,
+    gap: 8,
     marginBottom: 16,
   },
-  timePickerButtonText: {
-    fontSize: 16,
+  timeOption: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: '#F9FAFB',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  timeOptionSelected: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  timeOptionText: {
+    fontSize: 14,
+    fontWeight: '600',
     color: Colors.text,
+  },
+  timeOptionTextSelected: {
+    color: '#fff',
   },
   toggleRow: {
     flexDirection: 'row',
@@ -285,20 +326,41 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 16,
   },
-  saveButton: {
-    backgroundColor: Colors.primary,
-    borderRadius: 12,
-    paddingVertical: 16,
+  bottomButtons: {
+    flexDirection: 'row',
     marginHorizontal: 16,
     marginBottom: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
+    gap: 12,
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
   },
+  saveButton: {
+    backgroundColor: Colors.primary,
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+  },
+  saveButtonHalf: {
+    flex: 1,
+  },
   saveButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  deleteButton: {
+    backgroundColor: Colors.danger,
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+  },
+  deleteButtonText: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#fff',

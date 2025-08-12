@@ -7,6 +7,8 @@ export interface MedicationInfo {
   frequency: 'daily' | 'weekly' | 'as-needed';
   notes?: string;
   icon: string;
+  itemSeq?: string;
+  itemImage?: string | null;
 }
 
 export interface FamilyMember {
@@ -231,6 +233,8 @@ export const addMedicationToMember = (memberId: string, medicationData: {
   endDate?: string;
   notes?: string;
   time?: string;
+  itemSeq?: string;
+  itemImage?: string | null;
 }): boolean => {
   const memberIndex = FAMILY_DATA.findIndex(member => member.id === memberId);
   if (memberIndex !== -1 && memberIndex !== 0) { // invite 항목 제외
@@ -250,7 +254,9 @@ export const addMedicationToMember = (memberId: string, medicationData: {
       enabled: true,
       frequency: 'daily',
       notes: medicationData.notes || '',
-      icon: 'medication'
+      icon: 'medication',
+      itemSeq: medicationData.itemSeq,
+      itemImage: medicationData.itemImage
     };
     
     // 약물 추가
@@ -262,16 +268,33 @@ export const addMedicationToMember = (memberId: string, medicationData: {
 
 // 특정 가족 구성원의 약물 제거
 export const removeMedicationFromMember = (memberId: string, medicationId: string): boolean => {
+  console.log('removeMedicationFromMember called with:', { memberId, medicationId });
+  
   const memberIndex = FAMILY_DATA.findIndex(member => member.id === memberId);
+  console.log('Found memberIndex:', memberIndex);
+  
   if (memberIndex !== -1 && memberIndex !== 0) { // invite 항목 제외
     const member = FAMILY_DATA[memberIndex];
+    console.log('Member found:', member.name, 'has medications:', member.medications?.length);
+    
     if (member.medications) {
+      console.log('Existing medication IDs:', member.medications.map(m => m.id));
       const medicationIndex = member.medications.findIndex(med => med.id === medicationId);
+      console.log('Found medicationIndex:', medicationIndex);
+      
       if (medicationIndex !== -1) {
+        console.log('Removing medication:', member.medications[medicationIndex].medicationName);
         member.medications.splice(medicationIndex, 1);
+        console.log('Medication removed. Remaining medications:', member.medications.length);
         return true;
+      } else {
+        console.log('Medication not found in member medications');
       }
+    } else {
+      console.log('Member has no medications array');
     }
+  } else {
+    console.log('Member not found or is invite item');
   }
   return false;
 };

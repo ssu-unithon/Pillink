@@ -1,35 +1,56 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { addMedicationToMember } from '@/constants/FamilyData';
 
-// 약물 데이터베이스 (실제로는 API에서 가져올 데이터)
-const MEDICATION_DATABASE = [
-  { id: '1', name: '타이레놀', type: '해열진통제', company: '한국얀센' },
-  { id: '2', name: '애드빌', type: '해열진통제', company: '한국화이자' },
-  { id: '3', name: '게보린', type: '해열진통제', company: '삼진제약' },
-  { id: '4', name: '펜잘', type: '해열진통제', company: '동아제약' },
-  { id: '5', name: '낙센', type: '소염진통제', company: '한국화이자' },
-  { id: '6', name: '부루펜', type: '소염진통제', company: '삼일제약' },
-  { id: '7', name: '아스피린', type: '해열진통제', company: '바이엘코리아' },
-  { id: '8', name: '이브', type: '해열진통제', company: '에스에스제약' },
-  { id: '9', name: '낫센', type: '소염진통제', company: '한국화이자' },
-  { id: '10', name: '탁센', type: '소염진통제', company: '한독' },
-  { id: '11', name: '인사돌', type: '해열진통제', company: '동아제약' },
-  { id: '12', name: '훼스탈', type: '소화제', company: '동아제약' },
-  { id: '13', name: '베아제', type: '소화제', company: '한국야쿠르트' },
-  { id: '14', name: '신신파스', type: '외용제', company: '동국제약' },
-  { id: '15', name: '멘소래담', type: '외용제', company: '동아제약' },
+// 임시 로컬 약물 데이터베이스
+const LOCAL_MEDICATION_DATABASE: Medication[] = [
+  {
+    itemSeq: '202005623',
+    itemName: '어린이타이레놀산160밀리그램(아세트아미노펜)',
+    entpName: '한국존슨앤드존슨판매(유)',
+    efcyQesitm: '이 약은 감기로 인한 발열 및 동통(통증), 두통, 신경통, 근육통, 월경통, 염좌통(삔 통증), 치통, 관절통, 류마티양 동통(통증)에 사용합니다.',
+    itemImage: null
+  },
+  {
+    itemSeq: '202106092',
+    itemName: '타이레놀정500밀리그람(아세트아미노펜)',
+    entpName: '한국존슨앤드존슨판매(유)',
+    efcyQesitm: '이 약은 감기로 인한 발열 및 동통(통증), 두통, 신경통, 근육통, 월경통, 염좌통(삔 통증), 치통, 관절통, 류마티양 동통(통증)에 사용합니다.',
+    itemImage: 'https://nedrug.mfds.go.kr/pbp/cmn/itemImageDownload/1OKRXo9l4D5'
+  },
+  {
+    itemSeq: '198800001',
+    itemName: '부루펜정400밀리그램(이부프로펜)',
+    entpName: '삼일제약(주)',
+    efcyQesitm: '류마티스성 관절염, 골관절염(퇴행성 관절질환), 통풍성 관절염, 강직성 척추염의 염증 및 동통',
+    itemImage: null
+  },
+  {
+    itemSeq: '198800002', 
+    itemName: '낙센정275밀리그램(낙신)',
+    entpName: '한국화이자제약(주)',
+    efcyQesitm: '류마티스성 관절염, 골관절염, 강직성 척추염, 건선성 관절염 등의 염증성 질환',
+    itemImage: null
+  },
+  {
+    itemSeq: '198800003',
+    itemName: '게보린정(아세트아미노펜)',
+    entpName: '삼진제약(주)',
+    efcyQesitm: '해열, 두통, 치통, 생리통, 관절통, 신경통, 근육통의 진통',
+    itemImage: null
+  }
 ];
 
 interface Medication {
-  id: string;
-  name: string;
-  type: string;
-  company: string;
+  itemSeq: string;
+  itemName: string;
+  entpName: string;
+  efcyQesitm: string;
+  itemImage: string | null;
 }
 
 export default function MedicationInput() {
@@ -40,8 +61,7 @@ export default function MedicationInput() {
   const [selectedFamilyId, setSelectedFamilyId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedTime, setSelectedTime] = useState('08:00');
-  const [dosage, setDosage] = useState('1정');
-  const [frequency, setFrequency] = useState<'daily' | 'weekly' | 'as-needed'>('daily');
+  const [count, setCount] = useState('1');
   const [notes, setNotes] = useState('');
 
   useEffect(() => {
@@ -57,23 +77,46 @@ export default function MedicationInput() {
     getSelectedFamily();
   }, []);
 
+  const searchMedications = async (searchTerm: string) => {
+    if (!searchTerm.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      // 로컬 데이터베이스에서 검색
+      const results = LOCAL_MEDICATION_DATABASE.filter(medication =>
+        medication.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        medication.entpName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        medication.efcyQesitm.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      
+      // 실제 API 호출처럼 약간의 지연 시뮬레이션
+      setTimeout(() => {
+        setSearchResults(results);
+        setIsLoading(false);
+      }, 300);
+    } catch (error) {
+      console.error('약물 검색 오류:', error);
+      Alert.alert('오류', '약물 검색 중 오류가 발생했습니다.');
+      setSearchResults([]);
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     // 검색어가 변경될 때 약물 검색
-    if (searchText.trim().length > 0) {
-      const results = MEDICATION_DATABASE.filter(medication =>
-        medication.name.toLowerCase().includes(searchText.toLowerCase()) ||
-        medication.type.toLowerCase().includes(searchText.toLowerCase()) ||
-        medication.company.toLowerCase().includes(searchText.toLowerCase())
-      );
-      setSearchResults(results);
-    } else {
-      setSearchResults([]);
-    }
+    const timer = setTimeout(() => {
+      searchMedications(searchText);
+    }, 300); // 300ms 디바운스
+
+    return () => clearTimeout(timer);
   }, [searchText]);
 
   const handleMedicationSelect = (medication: Medication) => {
     setSelectedMedication(medication);
-    setSearchText(medication.name);
+    setSearchText(medication.itemName);
     setSearchResults([]);
   };
 
@@ -91,22 +134,25 @@ export default function MedicationInput() {
     setIsLoading(true);
     
     try {
-      // FamilyData에 약물 추가
-      const success = addMedicationToMember(selectedFamilyId, {
-        id: selectedMedication.id,
-        name: selectedMedication.name,
-        type: selectedMedication.type,
-        company: selectedMedication.company,
-        dosage: dosage,
-        frequency: frequency === 'daily' ? '1일 1회' : frequency === 'weekly' ? '1주 1회' : '필요시',
-        startDate: new Date().toISOString().split('T')[0],
-        endDate: '',
-        notes: notes,
-        time: selectedTime
-      });
-
+      // 로컬 FamilyData에 약물 추가
+      const medicationData = {
+        id: Date.now().toString(),
+        name: selectedMedication.itemName,
+        type: '일반의약품',
+        company: selectedMedication.entpName,
+        dosage: `${count}정`,
+        time: selectedTime,
+        notes,
+        itemSeq: selectedMedication.itemSeq,
+        itemImage: selectedMedication.itemImage
+      };
+      
+      console.log('Adding medication to familyId:', selectedFamilyId, medicationData);
+      const success = addMedicationToMember(selectedFamilyId, medicationData);
+      console.log('Local medication add success:', success);
+      
       if (success) {
-        Alert.alert('성공', `${selectedMedication.name}이(가) 추가되었습니다.`, [
+        Alert.alert('성공', `${selectedMedication.itemName}이(가) 추가되었습니다.`, [
           {
             text: '확인',
             onPress: () => router.back()
@@ -131,7 +177,7 @@ export default function MedicationInput() {
     <View style={styles.container}>
       {/* 헤더 */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
+        <TouchableOpacity onPress={handleGoBack} style={styles.backButton} activeOpacity={0.7}>
           <Ionicons name="arrow-back" size={24} color={Colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>약물 직접 입력</Text>
@@ -159,26 +205,61 @@ export default function MedicationInput() {
             />
           </View>
 
+          {/* 로딩 상태 */}
+          {isLoading && searchText.trim().length > 0 && (
+            <View style={styles.loadingContainer}>
+              <Text style={styles.loadingText}>검색 중...</Text>
+            </View>
+          )}
+
           {/* 검색 결과 */}
-          {searchResults.length > 0 && (
+          {!isLoading && searchResults.length > 0 && (
             <View style={styles.resultsContainer}>
               <Text style={styles.resultsTitle}>검색 결과 ({searchResults.length}개)</Text>
               {searchResults.map((medication) => (
                 <TouchableOpacity
-                  key={medication.id}
+                  key={medication.itemSeq}
                   style={styles.medicationItem}
                   onPress={() => handleMedicationSelect(medication)}
                   activeOpacity={0.7}
                 >
+                  <View style={styles.medicationImageContainer}>
+                    {medication.itemImage ? (
+                      <Image
+                        source={{ uri: medication.itemImage }}
+                        style={styles.medicationImage}
+                        resizeMode="contain"
+                        onError={() => console.log('이미지 로드 실패:', medication.itemImage)}
+                      />
+                    ) : (
+                      <View style={styles.medicationImagePlaceholder}>
+                        <Ionicons name="medical" size={28} color={Colors.mediumGray} />
+                      </View>
+                    )}
+                  </View>
                   <View style={styles.medicationInfo}>
-                    <Text style={styles.medicationName}>{medication.name}</Text>
-                    <Text style={styles.medicationDetails}>
-                      {medication.type} • {medication.company}
+                    <Text style={styles.medicationName} numberOfLines={2}>
+                      {medication.itemName}
                     </Text>
+                    <Text style={styles.medicationDetails} numberOfLines={1}>
+                      {medication.entpName}
+                    </Text>
+                    {medication.efcyQesitm && (
+                      <Text style={styles.medicationDescription} numberOfLines={2}>
+                        {medication.efcyQesitm.replace(/\n/g, ' ').trim()}
+                      </Text>
+                    )}
                   </View>
                   <Ionicons name="chevron-forward" size={20} color={Colors.mediumGray} />
                 </TouchableOpacity>
               ))}
+            </View>
+          )}
+
+          {/* 검색 결과 없음 */}
+          {!isLoading && searchText.trim().length > 0 && searchResults.length === 0 && (
+            <View style={styles.noResultsContainer}>
+              <Text style={styles.noResultsText}>검색 결과가 없습니다.</Text>
             </View>
           )}
         </View>
@@ -188,11 +269,32 @@ export default function MedicationInput() {
           <View style={styles.selectedSection}>
             <Text style={styles.sectionTitle}>선택된 약물</Text>
             <View style={styles.selectedMedicationCard}>
+              <View style={styles.selectedMedicationImageContainer}>
+                {selectedMedication.itemImage ? (
+                  <Image
+                    source={{ uri: selectedMedication.itemImage }}
+                    style={styles.selectedMedicationImage}
+                    resizeMode="contain"
+                    onError={() => console.log('선택된 약물 이미지 로드 실패:', selectedMedication.itemImage)}
+                  />
+                ) : (
+                  <View style={styles.selectedMedicationImagePlaceholder}>
+                    <Ionicons name="medical" size={36} color={Colors.mediumGray} />
+                  </View>
+                )}
+              </View>
               <View style={styles.selectedMedicationInfo}>
-                <Text style={styles.selectedMedicationName}>{selectedMedication.name}</Text>
-                <Text style={styles.selectedMedicationDetails}>
-                  {selectedMedication.type} • {selectedMedication.company}
+                <Text style={styles.selectedMedicationName} numberOfLines={2}>
+                  {selectedMedication.itemName}
                 </Text>
+                <Text style={styles.selectedMedicationDetails} numberOfLines={1}>
+                  {selectedMedication.entpName}
+                </Text>
+                {selectedMedication.efcyQesitm && (
+                  <Text style={styles.selectedMedicationDescription} numberOfLines={3}>
+                    {selectedMedication.efcyQesitm.replace(/\n/g, ' ').trim()}
+                  </Text>
+                )}
               </View>
               <TouchableOpacity
                 onPress={() => setSelectedMedication(null)}
@@ -233,59 +335,16 @@ export default function MedicationInput() {
               {/* 복용량 */}
               <View style={styles.settingRow}>
                 <Text style={styles.settingLabel}>복용량</Text>
-                <View style={styles.dosageSelector}>
-                  {['1정', '2정', '1/2정', '1포'].map((dose) => (
-                    <TouchableOpacity
-                      key={dose}
-                      style={[
-                        styles.dosageOption,
-                        dosage === dose && styles.dosageOptionSelected
-                      ]}
-                      onPress={() => setDosage(dose)}
-                    >
-                      <Text style={[
-                        styles.dosageOptionText,
-                        dosage === dose && styles.dosageOptionTextSelected
-                      ]}>
-                        {dose}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-
-              {/* 복용 빈도 */}
-              <View style={styles.settingRow}>
-                <Text style={styles.settingLabel}>복용 빈도</Text>
-                <View style={styles.frequencySelector}>
-                  <TouchableOpacity
-                    style={[
-                      styles.frequencyOption,
-                      frequency === 'daily' && styles.frequencyOptionSelected
-                    ]}
-                    onPress={() => setFrequency('daily')}
-                  >
-                    <Text style={[
-                      styles.frequencyOptionText,
-                      frequency === 'daily' && styles.frequencyOptionTextSelected
-                    ]}>
-                      매일
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      styles.frequencyOption,
-                      frequency === 'as-needed' && styles.frequencyOptionSelected
-                    ]}
-                    onPress={() => setFrequency('as-needed')}
-                  >
-                    <Text style={[
-                      styles.frequencyOptionText,
-                      frequency === 'as-needed' && styles.frequencyOptionTextSelected
-                    ]}>
-                      필요시
-                    </Text>
-                  </TouchableOpacity>
+                <View style={styles.countInputContainer}>
+                  <TextInput
+                    style={styles.countInput}
+                    value={count}
+                    onChangeText={setCount}
+                    keyboardType="numeric"
+                    placeholder="1"
+                    placeholderTextColor={Colors.mediumGray}
+                  />
+                  <Text style={styles.countUnit}>정</Text>
                 </View>
               </View>
 
@@ -358,7 +417,8 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.border,
   },
   backButton: {
-    padding: 8,
+    padding: 12,
+    borderRadius: 8,
   },
   headerTitle: {
     fontSize: 18,
@@ -425,54 +485,80 @@ const styles = StyleSheet.create({
   },
   medicationItem: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
+    alignItems: 'flex-start',
+    paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
+    gap: 16,
+  },
+  medicationImageContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   medicationInfo: {
     flex: 1,
+    paddingTop: 2,
   },
   medicationName: {
     fontSize: 16,
     fontWeight: '600',
     color: Colors.text,
     marginBottom: 4,
+    lineHeight: 22,
   },
   medicationDetails: {
     fontSize: 14,
     color: Colors.textSecondary,
+    marginBottom: 4,
+  },
+  medicationDescription: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    lineHeight: 16,
+    fontStyle: 'italic',
   },
   selectedSection: {
     marginBottom: 32,
   },
   selectedMedicationCard: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     backgroundColor: Colors.card,
     borderRadius: 12,
-    padding: 16,
+    padding: 20,
     borderWidth: 2,
     borderColor: Colors.primary,
     shadowColor: Colors.shadow,
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 2,
+    gap: 16,
+  },
+  selectedMedicationImageContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   selectedMedicationInfo: {
     flex: 1,
+    paddingTop: 2,
   },
   selectedMedicationName: {
     fontSize: 18,
     fontWeight: '700',
     color: Colors.primary,
     marginBottom: 4,
+    lineHeight: 24,
   },
   selectedMedicationDetails: {
     fontSize: 14,
     color: Colors.textSecondary,
+    marginBottom: 6,
+  },
+  selectedMedicationDescription: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    lineHeight: 18,
+    fontStyle: 'italic',
   },
   removeButton: {
     padding: 8,
@@ -559,57 +645,27 @@ const styles = StyleSheet.create({
   timeOptionTextSelected: {
     color: '#fff',
   },
-  dosageSelector: {
+  countInputContainer: {
     flexDirection: 'row',
-    gap: 8,
-  },
-  dosageOption: {
-    flex: 1,
-    paddingVertical: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 8,
+    backgroundColor: Colors.card,
     paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: Colors.lightGray,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.border,
+    height: 50,
   },
-  dosageOptionSelected: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
-  dosageOptionText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.text,
-  },
-  dosageOptionTextSelected: {
-    color: '#fff',
-  },
-  frequencySelector: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  frequencyOption: {
+  countInput: {
     flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    backgroundColor: Colors.lightGray,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.border,
+    fontSize: 16,
+    color: Colors.text,
+    textAlign: 'center',
   },
-  frequencyOptionSelected: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
-  frequencyOptionText: {
-    fontSize: 14,
+  countUnit: {
+    fontSize: 16,
     fontWeight: '600',
     color: Colors.text,
-  },
-  frequencyOptionTextSelected: {
-    color: '#fff',
+    marginLeft: 8,
   },
   notesInput: {
     borderWidth: 1,
@@ -621,5 +677,71 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.card,
     minHeight: 60,
     textAlignVertical: 'top',
+  },
+  loadingContainer: {
+    marginTop: 16,
+    backgroundColor: Colors.card,
+    borderRadius: 12,
+    padding: 20,
+    alignItems: 'center',
+    shadowColor: Colors.shadow,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+  },
+  noResultsContainer: {
+    marginTop: 16,
+    backgroundColor: Colors.card,
+    borderRadius: 12,
+    padding: 20,
+    alignItems: 'center',
+    shadowColor: Colors.shadow,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  noResultsText: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+  },
+  medicationImage: {
+    width: 70,
+    height: 70,
+    borderRadius: 10,
+    backgroundColor: '#AABFE7',
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  medicationImagePlaceholder: {
+    width: 70,
+    height: 70,
+    borderRadius: 10,
+    backgroundColor: Colors.lightGray,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  selectedMedicationImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    backgroundColor: '#AABFE7',
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  selectedMedicationImagePlaceholder: {
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    backgroundColor: Colors.lightGray,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
 });
