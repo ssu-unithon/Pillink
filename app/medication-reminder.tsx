@@ -33,14 +33,67 @@ interface MedicationReminderData {
   is_enabled: boolean;
 }
 
+// 더미 데이터
+const DUMMY_MEDICATIONS: MedicationReminderData[] = [
+  {
+    id: 1,
+    name: '타이레놀정500밀리그람',
+    dosage: '1정',
+    time: '08:00',
+    image_url: 'https://nedrug.mfds.go.kr/pbp/cmn/itemImageDownload/1OKRXo9l4D5',
+    count: 1,
+    itemSeq: '202106092',
+    is_enabled: true
+  },
+  {
+    id: 2,
+    name: '오메가3',
+    dosage: '2캡슐',
+    time: '08:30',
+    count: 2,
+    itemSeq: '999001',
+    is_enabled: true
+  },
+  {
+    id: 3,
+    name: '비타민D',
+    dosage: '1정',
+    time: '09:00',
+    count: 1,
+    itemSeq: '999002',
+    is_enabled: true
+  },
+  {
+    id: 4,
+    name: '혈압약 (암로디핀)',
+    dosage: '1정',
+    time: '12:00',
+    count: 1,
+    itemSeq: '999003',
+    is_enabled: true
+  },
+  {
+    id: 5,
+    name: '소화제',
+    dosage: '2정',
+    time: '18:00',
+    count: 2,
+    itemSeq: '999004',
+    is_enabled: true
+  }
+];
+
 export default function MedicationReminderScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { isDeveloperMode } = useDeveloperMode();
   const [currentMedications, setCurrentMedications] = useState<MedicationReminderData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedMedicationId, setSelectedMedicationId] = useState<number | null>(null);
+  const [removingMedicationId, setRemovingMedicationId] = useState<number | null>(null);
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const slideAnim = React.useRef(new Animated.Value(50)).current;
+  const cardAnimations = React.useRef<{[key: number]: Animated.Value}>({}).current;
 
   useEffect(() => {
     // 애니메이션 시작
@@ -64,7 +117,48 @@ export default function MedicationReminderScreen() {
     try {
       setIsLoading(true);
       
-      // 선택된 가족 ID 가져오기
+      // 개발자 모드에서는 더미 데이터 사용
+      if (isDeveloperMode) {
+        console.log('🔧 Developer mode: Using dummy medication data');
+        
+        // 약간의 로딩 시간을 시뮬레이션
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // 현재 시간에 따라 더미 데이터 필터링 (데모 목적)
+        const currentHour = new Date().getHours();
+        let filteredDummyData = [...DUMMY_MEDICATIONS];
+        
+        // 오전에는 아침 약물들, 오후에는 점심/저녁 약물들 표시
+        if (currentHour < 12) {
+          filteredDummyData = DUMMY_MEDICATIONS.filter(med => 
+            ['08:00', '08:30', '09:00'].includes(med.time)
+          );
+        } else if (currentHour < 18) {
+          filteredDummyData = DUMMY_MEDICATIONS.filter(med => 
+            ['12:00'].includes(med.time)
+          );
+        } else {
+          filteredDummyData = DUMMY_MEDICATIONS.filter(med => 
+            ['18:00'].includes(med.time)
+          );
+        }
+        
+        // 빈 데이터일 때를 위해 최소 1개는 표시
+        if (filteredDummyData.length === 0) {
+          filteredDummyData = [DUMMY_MEDICATIONS[0]];
+        }
+        
+        setCurrentMedications(filteredDummyData);
+        // 새로운 약물들에 대한 애니메이션 초기화
+        filteredDummyData.forEach(med => {
+          if (!cardAnimations[med.id]) {
+            cardAnimations[med.id] = new Animated.Value(1);
+          }
+        });
+        return;
+      }
+      
+      // 실제 API 호출 (개발자 모드가 아닐 때)
       const selectedId = await AsyncStorage.getItem('selected_family_id');
       const targetId = selectedId ? parseInt(selectedId) : undefined;
       
@@ -95,6 +189,12 @@ export default function MedicationReminderScreen() {
       }));
 
       setCurrentMedications(medications);
+      // 새로운 약물들에 대한 애니메이션 초기화
+      medications.forEach(med => {
+        if (!cardAnimations[med.id]) {
+          cardAnimations[med.id] = new Animated.Value(1);
+        }
+      });
     } catch (error) {
       console.error('Failed to fetch current alarms:', error);
       Alert.alert('오류', '알림 정보를 불러오는데 실패했습니다.');
@@ -126,11 +226,34 @@ export default function MedicationReminderScreen() {
       setSelectedMedicationId(medicationId);
       
       setTimeout(() => {
-        setCurrentMedications(prev => 
-          prev.filter(med => med.id !== medicationId)
-        );
-        setSelectedMedicationId(null);
-      }, 1500);
+        // 사라지는 애니메이션 시작
+        setRemovingMedicationId(medicationId);
+        if (cardAnimations[medicationId]) {
+          Animated.parallel([
+            Animated.timing(cardAnimations[medicationId], {
+              toValue: 0,
+              duration: 300,
+              useNativeDriver: true,
+            }),
+          ]).start(() => {
+            // 애니메이션 완료 후 리스트에서 제거
+            setCurrentMedications(prev => 
+              prev.filter(med => med.id !== medicationId)
+            );
+            setSelectedMedicationId(null);
+            setRemovingMedicationId(null);
+            // 애니메이션 참조 정리
+            delete cardAnimations[medicationId];
+          });
+        } else {
+          // 애니메이션이 없는 경우 바로 제거
+          setCurrentMedications(prev => 
+            prev.filter(med => med.id !== medicationId)
+          );
+          setSelectedMedicationId(null);
+          setRemovingMedicationId(null);
+        }
+      }, 400);
 
     } catch (error) {
       console.error('Failed to mark medication as taken:', error);
@@ -149,9 +272,26 @@ export default function MedicationReminderScreen() {
           style: 'destructive',
           onPress: () => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            setCurrentMedications(prev => 
-              prev.filter(med => med.id !== medicationId)
-            );
+            // 건너뛰기도 애니메이션 적용
+            setRemovingMedicationId(medicationId);
+            if (cardAnimations[medicationId]) {
+              Animated.timing(cardAnimations[medicationId], {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+              }).start(() => {
+                setCurrentMedications(prev => 
+                  prev.filter(med => med.id !== medicationId)
+                );
+                setRemovingMedicationId(null);
+                delete cardAnimations[medicationId];
+              });
+            } else {
+              setCurrentMedications(prev => 
+                prev.filter(med => med.id !== medicationId)
+              );
+              setRemovingMedicationId(null);
+            }
           }
         }
       ]
@@ -167,6 +307,12 @@ export default function MedicationReminderScreen() {
 
   const renderMedicationCard = (medication: MedicationReminderData, index: number) => {
     const isCompleted = selectedMedicationId === medication.id;
+    const isRemoving = removingMedicationId === medication.id;
+    
+    // 각 카드의 애니메이션 초기화
+    if (!cardAnimations[medication.id]) {
+      cardAnimations[medication.id] = new Animated.Value(1);
+    }
     
     return (
       <Animated.View
@@ -175,11 +321,18 @@ export default function MedicationReminderScreen() {
           styles.medicationCard,
           isCompleted && styles.completedCard,
           {
+            opacity: cardAnimations[medication.id],
             transform: [
               {
                 translateY: slideAnim.interpolate({
                   inputRange: [0, 50],
                   outputRange: [0, index * 10],
+                })
+              },
+              {
+                scale: cardAnimations[medication.id].interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.8, 1],
                 })
               }
             ]
