@@ -4,46 +4,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { addMedicationToMember } from '@/constants/FamilyData';
-
-// 임시 로컬 약물 데이터베이스
-const LOCAL_MEDICATION_DATABASE: Medication[] = [
-  {
-    itemSeq: '202005623',
-    itemName: '어린이타이레놀산160밀리그램(아세트아미노펜)',
-    entpName: '한국존슨앤드존슨판매(유)',
-    efcyQesitm: '이 약은 감기로 인한 발열 및 동통(통증), 두통, 신경통, 근육통, 월경통, 염좌통(삔 통증), 치통, 관절통, 류마티양 동통(통증)에 사용합니다.',
-    itemImage: null
-  },
-  {
-    itemSeq: '202106092',
-    itemName: '타이레놀정500밀리그람(아세트아미노펜)',
-    entpName: '한국존슨앤드존슨판매(유)',
-    efcyQesitm: '이 약은 감기로 인한 발열 및 동통(통증), 두통, 신경통, 근육통, 월경통, 염좌통(삔 통증), 치통, 관절통, 류마티양 동통(통증)에 사용합니다.',
-    itemImage: 'https://nedrug.mfds.go.kr/pbp/cmn/itemImageDownload/1OKRXo9l4D5'
-  },
-  {
-    itemSeq: '198800001',
-    itemName: '부루펜정400밀리그램(이부프로펜)',
-    entpName: '삼일제약(주)',
-    efcyQesitm: '류마티스성 관절염, 골관절염(퇴행성 관절질환), 통풍성 관절염, 강직성 척추염의 염증 및 동통',
-    itemImage: null
-  },
-  {
-    itemSeq: '198800002', 
-    itemName: '낙센정275밀리그램(낙신)',
-    entpName: '한국화이자제약(주)',
-    efcyQesitm: '류마티스성 관절염, 골관절염, 강직성 척추염, 건선성 관절염 등의 염증성 질환',
-    itemImage: null
-  },
-  {
-    itemSeq: '198800003',
-    itemName: '게보린정(아세트아미노펜)',
-    entpName: '삼진제약(주)',
-    efcyQesitm: '해열, 두통, 치통, 생리통, 관절통, 신경통, 근육통의 진통',
-    itemImage: null
-  }
-];
+import AlarmService from '@/services/AlarmService';
 
 interface Medication {
   itemSeq: string;
@@ -69,7 +30,13 @@ export default function MedicationInput() {
     const getSelectedFamily = async () => {
       try {
         const savedId = await AsyncStorage.getItem('selected_family_id');
+        console.log('Retrieved selected_family_id from storage:', savedId);
         setSelectedFamilyId(savedId);
+        
+        // 만약 저장된 ID가 없다면, 현재 로그인된 사용자 ID를 사용하도록 해보기
+        if (!savedId) {
+          console.log('No selected family ID found, this might cause issues with pill addition');
+        }
       } catch (error) {
         console.error('Failed to get selected family:', error);
       }
@@ -85,22 +52,34 @@ export default function MedicationInput() {
 
     try {
       setIsLoading(true);
-      // 로컬 데이터베이스에서 검색
-      const results = LOCAL_MEDICATION_DATABASE.filter(medication =>
-        medication.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        medication.entpName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        medication.efcyQesitm.toLowerCase().includes(searchTerm.toLowerCase())
-      );
       
-      // 실제 API 호출처럼 약간의 지연 시뮬레이션
-      setTimeout(() => {
-        setSearchResults(results);
-        setIsLoading(false);
-      }, 300);
+      // API를 통한 약물 검색
+      const token = await AsyncStorage.getItem('access_token');
+      console.log('Retrieved access token for search:', token ? 'Token exists' : 'No token found');
+      
+      if (!token) {
+        Alert.alert('인증 오류', '로그인이 필요합니다.');
+        return;
+      }
+      
+      const response = await fetch(`https://pillink-backend-production.up.railway.app/pill/search?itemName=${encodeURIComponent(searchTerm)}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data.items || []);
+      } else {
+        throw new Error('검색 API 호출 실패');
+      }
     } catch (error) {
       console.error('약물 검색 오류:', error);
       Alert.alert('오류', '약물 검색 중 오류가 발생했습니다.');
       setSearchResults([]);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -130,28 +109,68 @@ export default function MedicationInput() {
       Alert.alert('알림', '가족 구성원을 먼저 선택해주세요.');
       return;
     }
+    
+    console.log('Adding medication with selectedFamilyId:', selectedFamilyId);
+    console.log('Selected medication:', selectedMedication);
 
     setIsLoading(true);
     
     try {
-      // 로컬 FamilyData에 약물 추가
-      const medicationData = {
-        id: Date.now().toString(),
-        name: selectedMedication.itemName,
-        type: '일반의약품',
-        company: selectedMedication.entpName,
-        dosage: `${count}정`,
-        time: selectedTime,
-        notes,
+      // API를 통한 약물 추가
+      const token = await AsyncStorage.getItem('access_token');
+      console.log('Retrieved access token for medication add:', token ? 'Token exists' : 'No token found');
+      console.log('Token preview:', token ? token.substring(0, 20) + '...' : 'null');
+      
+      if (!token) {
+        Alert.alert('인증 오류', '로그인이 필요합니다.');
+        return;
+      }
+      
+      const requestPayload = {
+        targetId: parseInt(selectedFamilyId),
         itemSeq: selectedMedication.itemSeq,
-        itemImage: selectedMedication.itemImage
+        count: parseInt(count)
       };
       
-      console.log('Adding medication to familyId:', selectedFamilyId, medicationData);
-      const success = addMedicationToMember(selectedFamilyId, medicationData);
-      console.log('Local medication add success:', success);
+      console.log('Sending pill request:', requestPayload);
       
-      if (success) {
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+      
+      console.log('Request headers:', {
+        'Authorization': headers.Authorization.substring(0, 20) + '...',
+        'Content-Type': headers['Content-Type']
+      });
+      
+      const response = await fetch('https://pillink-backend-production.up.railway.app/pill', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(requestPayload)
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Medication added successfully:', data);
+        
+        // 약물 추가 성공 후 알림 생성
+        try {
+          const { hour, minute } = AlarmService.parseTime(selectedTime);
+          await AlarmService.createAlarm({
+            targetId: parseInt(selectedFamilyId),
+            hour,
+            minute,
+            is_enabled: true,
+            name: selectedMedication.itemName,
+            count: parseInt(count)
+          });
+          console.log('Alarm created successfully for medication');
+        } catch (alarmError) {
+          console.warn('알림 생성 실패:', alarmError);
+          // 약물은 성공적으로 추가되었으므로 경고만 표시
+        }
+        
         Alert.alert('성공', `${selectedMedication.itemName}이(가) 추가되었습니다.`, [
           {
             text: '확인',
@@ -159,7 +178,15 @@ export default function MedicationInput() {
           }
         ]);
       } else {
-        Alert.alert('오류', '약물 추가에 실패했습니다.');
+        const errorText = await response.text();
+        console.log('Medication add failed:', response.status, response.statusText);
+        console.log('Error response:', errorText);
+        console.log('Request payload:', {
+          targetId: parseInt(selectedFamilyId),
+          itemSeq: selectedMedication.itemSeq,
+          count: parseInt(count)
+        });
+        throw new Error(`약물 추가 API 호출 실패: ${response.status} ${response.statusText}`);
       }
     } catch (error) {
       console.error('Failed to add medication:', error);

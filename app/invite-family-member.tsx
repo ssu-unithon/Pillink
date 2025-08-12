@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import PrimaryButton from '@/components/PrimaryButton';
+import FamilyService from '@/services/FamilyService';
 
 const InviteFamilyMember = () => {
   const [name, setName] = useState('');
@@ -28,13 +29,19 @@ const InviteFamilyMember = () => {
       setError('올바른 전화번호 형식을 입력해주세요.');
       return;
     }
+    
     setLoading(true);
-    // TODO: 초대 API 연동
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      // API를 통한 가족 초대
+      await FamilyService.inviteToFamily(phone);
       Alert.alert('초대 완료', `${name}님을 가족으로 초대했습니다.`);
       router.back();
-    }, 1200);
+    } catch (error) {
+      console.error('Failed to invite family member:', error);
+      setError('초대에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

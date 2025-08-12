@@ -6,6 +6,8 @@ import { Colors } from '@/constants/Colors';
 import BottomNavigationBar from '../../components/BottomNavigationBar';
 import CustomSwitch from '@/components/CustomSwitch';
 import { FamilyAvatar } from '@/components/FamilyGroup';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import AlarmService from '@/services/AlarmService';
 import {
   getFamilyMemberById,
   getMedicationsByMemberId,
@@ -24,9 +26,7 @@ export default function FamilyAlarmScreen() {
   const router = useRouter();
 
   const familyMember = getFamilyMemberById(id as string);
-  const [alarms, setAlarms] = useState<MedicationInfo[]>(
-    getMedicationsByMemberId(id as string)
-  );
+  const [alarms, setAlarms] = useState<MedicationInfo[]>([]);
   const [isEditingDiseases, setIsEditingDiseases] = useState(false);
   const [isEditingAllergies, setIsEditingAllergies] = useState(false);
   const [diseases, setDiseases] = useState<string[]>(
@@ -36,14 +36,58 @@ export default function FamilyAlarmScreen() {
     getAllergiesByMemberId(id as string)
   );
 
-  // FamilyData 변경사항을 실시간으로 반영
+  // API에서 데이터 가져오기
+  const fetchMedicationData = async () => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      if (!token) return;
+
+      // 병렬로 약물과 알림 데이터 가져오기
+      const [pillResponse, alarmResponse] = await Promise.all([
+        fetch(`https://pillink-backend-production.up.railway.app/pill?targetId=${id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }),
+        AlarmService.getAlarms(parseInt(id as string))
+      ]);
+
+      if (pillResponse.ok) {
+        const pillData = await pillResponse.json();
+        const alarmData = alarmResponse;
+        
+        // 약물과 알림 데이터를 합쳐서 MedicationInfo 형식으로 변환
+        const medicationList: MedicationInfo[] = pillData.map((pill: any) => {
+          // 해당 약물에 대응하는 알림 찾기 (약물 이름으로 매칭)
+          const relatedAlarm = alarmData.find((alarm: any) => alarm.name === pill.name);
+          
+          return {
+            id: pill.id.toString(),
+            medicationName: pill.name,
+            time: relatedAlarm ? AlarmService.formatTime(relatedAlarm.hour, relatedAlarm.minute) : '08:00',
+            dosage: `${pill.count}정`,
+            enabled: pill.is_pined,
+            frequency: 'daily' as const,
+            notes: '',
+            icon: 'medication',
+            itemSeq: pill.itemSeq,
+            itemImage: null
+          };
+        });
+        
+        setAlarms(medicationList);
+      }
+    } catch (error) {
+      console.error('Failed to fetch medications and alarms:', error);
+    }
+  };
+
   useFocusEffect(
     React.useCallback(() => {
       // 페이지가 포커스될 때마다 데이터 업데이트
       console.log('Refreshing medication data for familyId:', id);
-      const medicationsList = getMedicationsByMemberId(id as string);
-      console.log('Found medications:', medicationsList);
-      setAlarms(medicationsList);
+      fetchMedicationData();
       setDiseases(getDiseasesByMemberId(id as string));
       setAllergies(getAllergiesByMemberId(id as string));
     }, [id])
@@ -60,24 +104,45 @@ export default function FamilyAlarmScreen() {
     );
   }
 
-  const toggleAlarm = (alarmId: string) => {
+  const toggleAlarm = async (alarmId: string) => {
     const alarm = alarms.find(a => a.id === alarmId);
-    if (alarm) {
-      const newEnabled = !alarm.enabled;
-      // FamilyData에 업데이트
-      const success = updateMedicationInfo(id as string, alarmId, { enabled: newEnabled });
-      if (success) {
+    if (!alarm) return;
+
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      if (!token) {
+        Alert.alert('인증 오류', '로그인이 필요합니다.');
+        return;
+      }
+
+      // API를 통해 pill 상태 업데이트 (is_pined toggle)
+      const response = await fetch('https://pillink-backend-production.up.railway.app/pill', {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          pillId: parseInt(alarmId),
+          is_pined: !alarm.enabled
+        })
+      });
+
+      if (response.ok) {
         // 로컬 상태 업데이트
         setAlarms(prev =>
-          prev.map(alarm =>
-            alarm.id === alarmId
-              ? { ...alarm, enabled: newEnabled }
-              : alarm
+          prev.map(item =>
+            item.id === alarmId
+              ? { ...item, enabled: !item.enabled }
+              : item
           )
         );
       } else {
-        Alert.alert('오류', '약물 정보 업데이트에 실패했습니다.');
+        throw new Error('약물 상태 업데이트 실패');
       }
+    } catch (error) {
+      console.error('Failed to toggle alarm:', error);
+      Alert.alert('오류', '약물 정보 업데이트에 실패했습니다.');
     }
   };
 
@@ -111,7 +176,7 @@ export default function FamilyAlarmScreen() {
     const success = updateMemberDiseases(id as string, diseases);
     if (success) {
       setIsEditingDiseases(false);
-      Alert.alert('저장 완료', '질환 정보가 업데이트되었습니다.');
+      // 알림 제거
     } else {
       Alert.alert('저장 실패', '질환 정보 저장 중 오류가 발생했습니다.');
     }
@@ -121,7 +186,7 @@ export default function FamilyAlarmScreen() {
     const success = updateMemberAllergies(id as string, allergies);
     if (success) {
       setIsEditingAllergies(false);
-      Alert.alert('저장 완료', '알레르기 정보가 업데이트되었습니다.');
+      // 알림 제거
     } else {
       Alert.alert('저장 실패', '알레르기 정보 저장 중 오류가 발생했습니다.');
     }
@@ -240,15 +305,16 @@ export default function FamilyAlarmScreen() {
             <Text style={styles.sectionTitle}>질환 정보</Text>
             <TouchableOpacity 
               onPress={() => isEditingDiseases ? saveDiseases() : setIsEditingDiseases(true)}
-              style={[styles.actionButton, isEditingDiseases ? styles.saveButton : styles.editButton]}
+              style={styles.actionButton}
+              activeOpacity={0.6}
             >
               <Ionicons 
-                name={isEditingDiseases ? "checkmark" : "create-outline"} 
-                size={20} 
-                color={isEditingDiseases ? "#fff" : Colors.primary} 
+                name={isEditingDiseases ? "checkmark" : "pencil"} 
+                size={16} 
+                color={Colors.primary} 
               />
-              <Text style={isEditingDiseases ? styles.saveButtonText : styles.editButtonText}>
-                {isEditingDiseases ? "저장" : "수정"}
+              <Text style={styles.editButtonText}>
+                {isEditingDiseases ? "완료" : "수정"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -297,15 +363,16 @@ export default function FamilyAlarmScreen() {
             <Text style={styles.sectionTitle}>알레르기 정보</Text>
             <TouchableOpacity 
               onPress={() => isEditingAllergies ? saveAllergies() : setIsEditingAllergies(true)}
-              style={[styles.actionButton, isEditingAllergies ? styles.saveButton : styles.editButton]}
+              style={styles.actionButton}
+              activeOpacity={0.6}
             >
               <Ionicons 
-                name={isEditingAllergies ? "checkmark" : "create-outline"} 
-                size={20} 
-                color={isEditingAllergies ? "#fff" : Colors.primary} 
+                name={isEditingAllergies ? "checkmark" : "pencil"} 
+                size={16} 
+                color={Colors.primary} 
               />
-              <Text style={isEditingAllergies ? styles.saveButtonText : styles.editButtonText}>
-                {isEditingAllergies ? "저장" : "수정"}
+              <Text style={styles.editButtonText}>
+                {isEditingAllergies ? "완료" : "수정"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -563,24 +630,31 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 48,
   },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    minWidth: 60,
+    justifyContent: 'center',
+  },
   editButton: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: Colors.primary,
+    backgroundColor: 'transparent',
   },
   editButtonText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '500',
     color: Colors.primary,
     marginLeft: 4,
   },
   saveButton: {
-    backgroundColor: Colors.primary,
+    backgroundColor: 'transparent',
   },
   saveButtonText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#fff',
+    fontWeight: '500',
+    color: Colors.primary,
     marginLeft: 4,
   },
   healthInfoCard: {
