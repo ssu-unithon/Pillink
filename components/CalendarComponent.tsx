@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { Colors } from '@/constants/Colors';
+import { defaultMarkedDates } from '@/constants/CalendarData';
 
 // 한국어 로케일 설정
 LocaleConfig.locales['ko'] = {
@@ -28,12 +29,12 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
   markedDates,
   onDayPress
 }) => {
-  const defaultMarkedDates = {
-    "2024-08-05": { selected: true, selectedColor: Colors.primary },
-    "2024-08-06": { marked: true, dotColor: Colors.danger },
-    "2024-08-07": { marked: true, dotColor: Colors.secondary },
-    "2024-08-08": { marked: true, dotColor: Colors.warning },
-  };
+  // const defaultMarkedDates = {
+  //   "2025-08-05": { selected: true, selectedColor: Colors.primary },
+  //   "2025-08-06": { marked: true, dotColor: Colors.danger },
+  //   "2025-08-07": { marked: true, dotColor: Colors.secondary },
+  //   "2025-08-08": { marked: true, dotColor: Colors.warning },
+  // };
 
   return (
     <View style={styles.sectionContainer}>

@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
 import { Colors } from '@/constants/Colors';
-import SearchBar from '../components/SearchBar';
 import CircularGauge from '../components/CircularGauge';
 import InteractionRiskGroups from '../components/InteractionRiskGroups';
 import InteractionWarning from '../components/InteractionWarning';
 import BottomNavigationBar from '../components/BottomNavigationBar';
 import { FAMILY_DATA } from '@/constants/FamilyData';
-import { INTERACTION_DATA, FAMILY_INTERACTION_DATA } from '@/constants/InteractionData';
+import { FAMILY_INTERACTION_DATA } from '@/constants/InteractionData';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 

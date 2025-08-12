@@ -29,12 +29,12 @@ export default function BottomNavigationBar({ activeIndex = 0, onTabPress }: { a
     Animated.parallel([
       Animated.timing(floatingAnimation1, {
         toValue: isOpening ? 1 : 0,
-        duration: 200,
+        duration: 250,
         useNativeDriver: true,
       }),
       Animated.timing(floatingAnimation2, {
         toValue: isOpening ? 1 : 0,
-        duration: 200,
+        duration: 250,
         useNativeDriver: true,
       }),
       Animated.timing(rotateAnimation, {
@@ -44,7 +44,7 @@ export default function BottomNavigationBar({ activeIndex = 0, onTabPress }: { a
       }),
       Animated.timing(backgroundAnimation, {
         toValue: isOpening ? 1 : 0,
-        duration: 200,
+        duration: 150,
         useNativeDriver: true,
       }),
     ]).start(() => {
@@ -57,8 +57,8 @@ export default function BottomNavigationBar({ activeIndex = 0, onTabPress }: { a
     if (isFloatingMenuOpen) {
       setShowFloatingButtons(true);
     } else {
-      // 200ms 후에 버튼 제거
-      const timeout = setTimeout(() => setShowFloatingButtons(false), 200);
+      // 250ms 후에 버튼 제거 (애니메이션 시간과 동기화)
+      const timeout = setTimeout(() => setShowFloatingButtons(false), 250);
       return () => clearTimeout(timeout);
     }
   }, [isFloatingMenuOpen]);
@@ -98,11 +98,11 @@ export default function BottomNavigationBar({ activeIndex = 0, onTabPress }: { a
     toggleFloatingMenu();
     // 여기에 각 버튼별 액션 구현
     if (action === 'search') {
-      // 검색 기능 구현
-      console.log('검색 버튼 클릭');
+      // 직접 입력 기능 구현
+      router.push('/medication-input');
     } else if (action === 'link') {
-      // 링크 기능 구현
-      console.log('링크 버튼 클릭');
+      // 처방전 불러오기 기능 구현
+      router.push('/prescription-import');
     }
   };
 
@@ -111,19 +111,19 @@ export default function BottomNavigationBar({ activeIndex = 0, onTabPress }: { a
       {
         translateX: floatingAnimation1.interpolate({
           inputRange: [0, 1],
-          outputRange: [0, -60], // 왼쪽으로 이동
+          outputRange: [0, -75], // 왼쪽으로 더 많이 이동
         }),
       },
       {
         translateY: floatingAnimation1.interpolate({
           inputRange: [0, 1],
-          outputRange: [0, -100], // 위로 이동
+          outputRange: [0, -85], // 위로 이동 (대각선 효과)
         }),
       },
       {
         scale: floatingAnimation1.interpolate({
           inputRange: [0, 1],
-          outputRange: [0.3, 1],
+          outputRange: [0.2, 1],
         }),
       },
     ],
@@ -135,19 +135,19 @@ export default function BottomNavigationBar({ activeIndex = 0, onTabPress }: { a
       {
         translateX: floatingAnimation2.interpolate({
           inputRange: [0, 1],
-          outputRange: [0, 60], // 오른쪽으로 이동
+          outputRange: [0, 75], // 오른쪽으로 더 많이 이동
         }),
       },
       {
         translateY: floatingAnimation2.interpolate({
           inputRange: [0, 1],
-          outputRange: [0, -100], // 위로 이동
+          outputRange: [0, -85], // 위로 이동 (대각선 효과)
         }),
       },
       {
         scale: floatingAnimation2.interpolate({
           inputRange: [0, 1],
-          outputRange: [0.3, 1],
+          outputRange: [0.2, 1],
         }),
       },
     ],
@@ -234,13 +234,15 @@ export default function BottomNavigationBar({ activeIndex = 0, onTabPress }: { a
               <View style={styles.floatingButtonWrapper}>
                 <TouchableOpacity
                   onPress={() => handleFloatingButtonPress('search')}
-                  style={[styles.centerCircle]}
+                  style={[styles.floatingButton]}
                   activeOpacity={0.7}
                 >
                   <MaterialCommunityIcons name="magnify" size={24} color="#fff" />
                 </TouchableOpacity>
+                <View style={styles.labelContainer}>
+                  <Text style={styles.floatingButtonLabel}>직접 입력</Text>
+                </View>
               </View>
-              <Text style={styles.floatingButtonLabel}>직접 입력</Text>
             </Animated.View>
 
             {/* 링크 버튼과 라벨 */}
@@ -248,13 +250,15 @@ export default function BottomNavigationBar({ activeIndex = 0, onTabPress }: { a
               <View style={styles.floatingButtonWrapper}>
                 <TouchableOpacity
                   onPress={() => handleFloatingButtonPress('link')}
-                  style={[styles.centerCircle]}
+                  style={[styles.floatingButton]}
                   activeOpacity={0.7}
                 >
                   <MaterialCommunityIcons name="link" size={24} color="#fff" />
                 </TouchableOpacity>
+                <View style={styles.labelContainer}>
+                  <Text style={styles.floatingButtonLabel}>처방전 불러오기</Text>
+                </View>
               </View>
-              <Text style={styles.floatingButtonLabel}>처방전 불러오기</Text>
             </Animated.View>
           </>
         )}
@@ -338,17 +342,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
-    // 원형 강조
-    borderWidth: 0,
-    padding: 0,
-  },
-  floatingButtonInner: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 0,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   overlay: {
     position: 'absolute',
@@ -356,7 +351,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     zIndex: 99,
   },
   overlayTouchable: {
@@ -367,7 +362,7 @@ const styles = StyleSheet.create({
   },
   floatingButtonContainer: {
     position: 'absolute',
-    bottom: 80,
+    bottom: 75,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 20,
@@ -375,13 +370,20 @@ const styles = StyleSheet.create({
   floatingButtonWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
-    // 버튼과 라벨 세로 정렬
+  },
+  labelContainer: {
+    marginTop: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 12,
+    minWidth: 60,
   },
   floatingButtonLabel: {
-    marginTop: 4,
     color: '#fff',
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: 11,
+    fontWeight: '600',
     textAlign: 'center',
+    lineHeight: 14,
   },
 });

@@ -17,7 +17,7 @@ const FamilyListItem = ({ item }: { item: any }) => {
 
   if (item.type === 'invite') {
     return (
-      <TouchableOpacity style={styles.row} activeOpacity={0.7}>
+      <TouchableOpacity style={styles.row} activeOpacity={0.7} onPress={() => router.push('/invite-family-member')}>
         <View style={styles.inviteCircle}>
           <Ionicons name="add" size={24} color="#4285F4" />
         </View>
@@ -55,7 +55,7 @@ const FamilyGroup = ({ data, showAvatars = true, onSelectMember, selectedId }: {
   const renderItem = ({ item }: { item: any }) => {
     if (item.type === 'invite') {
       return (
-        <TouchableOpacity style={styles.row} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.row} activeOpacity={0.7} onPress={() => router.push('/invite-family-member')}>
           <View style={styles.inviteCircle}>
             <Ionicons name="add" size={24} color="#4285F4" />
           </View>

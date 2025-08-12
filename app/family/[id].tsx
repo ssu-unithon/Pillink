@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Alert, Image } from 'react-native';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import BottomNavigationBar from '../../components/BottomNavigationBar';
@@ -9,6 +9,13 @@ import { FamilyAvatar } from '@/components/FamilyGroup';
 import {
   getFamilyMemberById,
   getMedicationsByMemberId,
+  getDiseasesByMemberId,
+  getAllergiesByMemberId,
+  updateMemberDiseases,
+  updateMemberAllergies,
+  updateMedicationInfo,
+  AVAILABLE_DISEASES,
+  AVAILABLE_ALLERGIES,
   MedicationInfo
 } from '@/constants/FamilyData';
 
@@ -19,6 +26,27 @@ export default function FamilyAlarmScreen() {
   const familyMember = getFamilyMemberById(id as string);
   const [alarms, setAlarms] = useState<MedicationInfo[]>(
     getMedicationsByMemberId(id as string)
+  );
+  const [isEditingDiseases, setIsEditingDiseases] = useState(false);
+  const [isEditingAllergies, setIsEditingAllergies] = useState(false);
+  const [diseases, setDiseases] = useState<string[]>(
+    getDiseasesByMemberId(id as string)
+  );
+  const [allergies, setAllergies] = useState<string[]>(
+    getAllergiesByMemberId(id as string)
+  );
+
+  // FamilyData 변경사항을 실시간으로 반영
+  useFocusEffect(
+    React.useCallback(() => {
+      // 페이지가 포커스될 때마다 데이터 업데이트
+      console.log('Refreshing medication data for familyId:', id);
+      const medicationsList = getMedicationsByMemberId(id as string);
+      console.log('Found medications:', medicationsList);
+      setAlarms(medicationsList);
+      setDiseases(getDiseasesByMemberId(id as string));
+      setAllergies(getAllergiesByMemberId(id as string));
+    }, [id])
   );
 
   if (!familyMember) {
@@ -33,13 +61,24 @@ export default function FamilyAlarmScreen() {
   }
 
   const toggleAlarm = (alarmId: string) => {
-    setAlarms(prev =>
-      prev.map(alarm =>
-        alarm.id === alarmId
-          ? { ...alarm, enabled: !alarm.enabled }
-          : alarm
-      )
-    );
+    const alarm = alarms.find(a => a.id === alarmId);
+    if (alarm) {
+      const newEnabled = !alarm.enabled;
+      // FamilyData에 업데이트
+      const success = updateMedicationInfo(id as string, alarmId, { enabled: newEnabled });
+      if (success) {
+        // 로컬 상태 업데이트
+        setAlarms(prev =>
+          prev.map(alarm =>
+            alarm.id === alarmId
+              ? { ...alarm, enabled: newEnabled }
+              : alarm
+          )
+        );
+      } else {
+        Alert.alert('오류', '약물 정보 업데이트에 실패했습니다.');
+      }
+    }
   };
 
   const getFrequencyText = (frequency: string) => {
@@ -51,20 +90,68 @@ export default function FamilyAlarmScreen() {
     }
   };
 
+
+  const toggleDisease = (disease: string) => {
+    setDiseases(prev => 
+      prev.includes(disease) 
+        ? prev.filter(d => d !== disease)
+        : [...prev, disease]
+    );
+  };
+
+  const toggleAllergy = (allergy: string) => {
+    setAllergies(prev =>
+      prev.includes(allergy)
+        ? prev.filter(a => a !== allergy)
+        : [...prev, allergy]
+    );
+  };
+
+  const saveDiseases = () => {
+    const success = updateMemberDiseases(id as string, diseases);
+    if (success) {
+      setIsEditingDiseases(false);
+      Alert.alert('저장 완료', '질환 정보가 업데이트되었습니다.');
+    } else {
+      Alert.alert('저장 실패', '질환 정보 저장 중 오류가 발생했습니다.');
+    }
+  };
+
+  const saveAllergies = () => {
+    const success = updateMemberAllergies(id as string, allergies);
+    if (success) {
+      setIsEditingAllergies(false);
+      Alert.alert('저장 완료', '알레르기 정보가 업데이트되었습니다.');
+    } else {
+      Alert.alert('저장 실패', '알레르기 정보 저장 중 오류가 발생했습니다.');
+    }
+  };
+
   const renderMedicationAlarm = (alarm: MedicationInfo) => (
     <TouchableOpacity
       key={alarm.id}
       style={styles.alarmCard}
-      onPress={() => router.push(`/family/${id}/medication`)}
+      onPress={() => router.push(`/add-alarm?medicationId=${alarm.id}&familyId=${id}`)}
       activeOpacity={0.7}
     >
       <View style={styles.alarmContent}>
-        <View style={styles.alarmIcon}>
-          <MaterialIcons
-            name={alarm.icon as any}
-            size={24}
-            color={alarm.enabled ? Colors.primary : '#9CA3AF'}
-          />
+        <View style={styles.medicationImageContainer}>
+          {alarm.itemImage ? (
+            <Image
+              source={{ uri: alarm.itemImage }}
+              style={[styles.medicationImage, { opacity: alarm.enabled ? 1 : 0.5 }]}
+              resizeMode="contain"
+              onError={() => console.log('약물 이미지 로드 실패:', alarm.itemImage)}
+            />
+          ) : (
+            <View style={[styles.medicationImagePlaceholder, { opacity: alarm.enabled ? 1 : 0.5 }]}>
+              <MaterialIcons
+                name="medical-services"
+                size={24}
+                color={alarm.enabled ? Colors.primary : '#9CA3AF'}
+              />
+            </View>
+          )}
         </View>
         <View style={styles.alarmInfo}>
           <Text style={[styles.alarmTitle, { color: alarm.enabled ? '#1F2937' : '#9CA3AF' }]}>
@@ -133,16 +220,132 @@ export default function FamilyAlarmScreen() {
 
         {/* 약물 알림 목록 */}
         <View style={styles.alarmsSection}>
-          <Text style={styles.sectionTitle}>복용 중인 약물</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>복용 중인 약물</Text>
+          </View>
           {alarms.length > 0 ? (
             alarms.map(renderMedicationAlarm)
           ) : (
             <View style={styles.emptyState}>
               <MaterialIcons name="medication" size={48} color="#E5E7EB" />
               <Text style={styles.emptyText}>등록된 약물이 없습니다</Text>
-              <Text style={styles.emptySubtext}>+ 버튼을 눌러 약물을 추가해보세요</Text>
+              <Text style={styles.emptySubtext}>약물 직접 입력에서 약물을 추가해보세요</Text>
             </View>
           )}
+        </View>
+
+        {/* 질환 정보 섹션 */}
+        <View style={styles.medicalSection}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>질환 정보</Text>
+            <TouchableOpacity 
+              onPress={() => isEditingDiseases ? saveDiseases() : setIsEditingDiseases(true)}
+              style={[styles.actionButton, isEditingDiseases ? styles.saveButton : styles.editButton]}
+            >
+              <Ionicons 
+                name={isEditingDiseases ? "checkmark" : "create-outline"} 
+                size={20} 
+                color={isEditingDiseases ? "#fff" : Colors.primary} 
+              />
+              <Text style={isEditingDiseases ? styles.saveButtonText : styles.editButtonText}>
+                {isEditingDiseases ? "저장" : "수정"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.healthInfoCard}>
+            {isEditingDiseases ? (
+              <View style={styles.chipEditContainer}>
+                {AVAILABLE_DISEASES.map((disease, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => toggleDisease(disease)}
+                    style={[
+                      styles.chip,
+                      diseases.includes(disease) && styles.chipSelected
+                    ]}
+                  >
+                    <Text style={[
+                      styles.chipText,
+                      diseases.includes(disease) && styles.chipTextSelected
+                    ]}>
+                      {disease}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ) : (
+              <View style={styles.healthInfoDisplay}>
+                {diseases.length > 0 ? (
+                  <View style={styles.chipContainer}>
+                    {diseases.map((disease, index) => (
+                      <View key={index} style={[styles.chip, styles.chipReadOnly]}>
+                        <Text style={styles.chipReadOnlyText}>{disease}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : (
+                  <Text style={styles.emptyHealthText}>등록된 질환이 없습니다</Text>
+                )}
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* 알레르기 정보 섹션 */}
+        <View style={styles.medicalSection}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>알레르기 정보</Text>
+            <TouchableOpacity 
+              onPress={() => isEditingAllergies ? saveAllergies() : setIsEditingAllergies(true)}
+              style={[styles.actionButton, isEditingAllergies ? styles.saveButton : styles.editButton]}
+            >
+              <Ionicons 
+                name={isEditingAllergies ? "checkmark" : "create-outline"} 
+                size={20} 
+                color={isEditingAllergies ? "#fff" : Colors.primary} 
+              />
+              <Text style={isEditingAllergies ? styles.saveButtonText : styles.editButtonText}>
+                {isEditingAllergies ? "저장" : "수정"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.healthInfoCard}>
+            {isEditingAllergies ? (
+              <View style={styles.chipEditContainer}>
+                {AVAILABLE_ALLERGIES.map((allergy, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => toggleAllergy(allergy)}
+                    style={[
+                      styles.chip,
+                      allergies.includes(allergy) && styles.chipSelected
+                    ]}
+                  >
+                    <Text style={[
+                      styles.chipText,
+                      allergies.includes(allergy) && styles.chipTextSelected
+                    ]}>
+                      {allergy}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ) : (
+              <View style={styles.healthInfoDisplay}>
+                {allergies.length > 0 ? (
+                  <View style={styles.chipContainer}>
+                    {allergies.map((allergy, index) => (
+                      <View key={index} style={[styles.chip, styles.chipReadOnly]}>
+                        <Text style={styles.chipReadOnlyText}>{allergy}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : (
+                  <Text style={styles.emptyHealthText}>등록된 알레르기가 없습니다</Text>
+                )}
+              </View>
+            )}
+          </View>
         </View>
       </ScrollView>
       <BottomNavigationBar activeIndex={4} />
@@ -247,6 +450,9 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     textAlign: 'center',
   },
+  medicalSection: {
+    marginBottom: 24,
+  },
   alarmsSection: {
     marginBottom: 24,
   },
@@ -254,6 +460,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#1F2937',
+    marginBottom: 16,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 16,
   },
   alarmCard: {
@@ -265,20 +477,37 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 1,
-  },
-  alarmContent: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
   },
-  alarmIcon: {
+  alarmContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  medicationImageContainer: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#F0F8FF',
+    marginRight: 16,
+    overflow: 'hidden',
+  },
+  medicationImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#AABFE7',
+  },
+  medicationImagePlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#AABFE7',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   alarmInfo: {
     flex: 1,
@@ -333,5 +562,90 @@ const styles = StyleSheet.create({
     color: '#EF4444',
     textAlign: 'center',
     marginTop: 48,
+  },
+  editButton: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: Colors.primary,
+  },
+  editButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.primary,
+    marginLeft: 4,
+  },
+  saveButton: {
+    backgroundColor: Colors.primary,
+  },
+  saveButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
+    marginLeft: 4,
+  },
+  healthInfoCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  healthInfoDisplay: {
+    minHeight: 60,
+    justifyContent: 'center',
+  },
+  chipEditContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  chipContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  chip: {
+    backgroundColor: Colors.lightGray,
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginBottom: 8,
+    minHeight: 36,
+    justifyContent: 'center',
+  },
+  chipSelected: {
+    backgroundColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  chipText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: Colors.text,
+  },
+  chipTextSelected: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  chipReadOnly: {
+    backgroundColor: '#F8F9FA',
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+  },
+  chipReadOnlyText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#495057',
+  },
+  emptyHealthText: {
+    fontSize: 14,
+    color: Colors.mediumGray,
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
 });

@@ -13,6 +13,9 @@ import { FAMILY_DATA } from "@/constants/FamilyData";
 import FamilyGroup from "@/components/FamilyGroup";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FAMILY_INTERACTION_DATA } from "@/constants/InteractionData";
+import { USER_NAME } from '@/constants/UserInfo';
+import { getLatestArticles } from "@/constants/SupplementArticles";
+import { useRouter } from 'expo-router';
 
 // Module-level variable to track if animation has run once per session
 let hasAnimatedOnce = false;
@@ -51,7 +54,9 @@ const AnimatedSection = ({ children, index, shouldAnimate }: { children: React.R
 
 export default function Index() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const latestArticles = getLatestArticles(1); // 최신 아티클 1개만 가져오기
 
   // 선택된 가족 ID를 AsyncStorage에서 불러오기
   useEffect(() => {
@@ -93,16 +98,11 @@ export default function Index() {
             </View>
         </AnimatedSection>
 
-        {/* Search Bar */}
-        <AnimatedSection index={1} shouldAnimate={!hasAnimatedOnce}>
-            <SearchBar />
-        </AnimatedSection>
-
         {/* Greeting Text */}
         <AnimatedSection index={2} shouldAnimate={!hasAnimatedOnce}>
             <View style={styles.greetingContainer}>
             <Text style={styles.greetingText}>
-                안녕하세요, <Text style={styles.greetingHighlight}>유은정님!</Text>
+                안녕하세요, <Text style={styles.greetingHighlight}>{USER_NAME}님!</Text>
             </Text>
             <Text style={styles.greetingSubtext}>
                 오늘도 건강한 하루 되세요 ✨
@@ -156,39 +156,53 @@ export default function Index() {
             </View>
         </AnimatedSection>
 
-        {/* Health News Section */}
+        {/* Supplement Recommendations Section */}
         <AnimatedSection index={6} shouldAnimate={!hasAnimatedOnce}>
             <View style={styles.sectionContainer}>
                 <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>건강 뉴스</Text>
-                    <Text style={styles.sectionSubtitle}>��은정님을 위한 맞춤 정보</Text>
+                    <Text style={styles.sectionTitle}>영양제 추천</Text>
+                    <Text style={styles.sectionSubtitle}>{USER_NAME}님을 위한 맞춤 건강 정보</Text>
                 </View>
-                <TouchableOpacity style={styles.card} activeOpacity={0.8}>
-                    <View style={styles.newsContentWrapper}>
-                        <View style={styles.newsImagePlaceholder}>
-                            <Text style={styles.newsEmoji}>📰</Text>
+                {latestArticles.map((article, index) => (
+                    <TouchableOpacity 
+                        key={article.id}
+                        style={[styles.card, index > 0 && { marginTop: 12 }]} 
+                        activeOpacity={0.8}
+                        onPress={() => router.push(`/supplement-article/${article.id}`)}
+                    >
+                        <View style={styles.articleContentWrapper}>
+                            <View style={styles.articleImagePlaceholder}>
+                                <Text style={styles.articleEmoji}>💊</Text>
+                            </View>
+                            <View style={styles.articleContent}>
+                                <View style={styles.articleCategory}>
+                                    <Text style={styles.articleCategoryText}>{article.category}</Text>
+                                </View>
+                                <Text style={styles.articleTitle} numberOfLines={2}>{article.title}</Text>
+                                <Text style={styles.articleSubtitle} numberOfLines={2}>{article.subtitle}</Text>
+                                <View style={styles.articleMeta}>
+                                    <Text style={styles.articleAuthor}>{article.author}</Text>
+                                    <Text style={styles.articleDot}>•</Text>
+                                    <Text style={styles.articleDate}>{article.publishedAt}</Text>
+                                    <Text style={styles.articleDot}>•</Text>
+                                    <Text style={styles.articleReadTime}>{article.readTime} 읽기</Text>
+                                </View>
+                            </View>
                         </View>
-                        <View style={styles.newsContent}>
-                            <Text style={styles.newsTitle}>겨울철 감기 예방을 위한 영양제 복용법</Text>
-                            <Text style={styles.newsSubtitle}>면역력 강화를 위한 비타민 D, C 섭취 가이드</Text>
-                            <Text style={styles.newsDate}>2시간 전</Text>
-                        </View>
-                    </View>
+                    </TouchableOpacity>
+                ))}
+                
+                {/* View All Articles Button */}
+                <TouchableOpacity 
+                    style={styles.viewAllButton} 
+                    activeOpacity={0.8}
+                    onPress={() => router.push('/supplement-articles')}
+                >
+                    <Text style={styles.viewAllText}>모든 추천 보기</Text>
+                    <Text style={styles.viewAllIcon}>→</Text>
                 </TouchableOpacity>
             </View>
         </AnimatedSection>
-
-        {/* FamilyGroup Section */}
-        {/* 가족 목록(프로필에서만 사용) - 홈에서는 제거됨 */}
-        {/* <AnimatedSection index={7} shouldAnimate={!hasAnimatedOnce}>
-          <FamilyGroup
-            data={FAMILY_DATA}
-            onSelectMember={async (id) => {
-              setSelectedId(id);
-              await AsyncStorage.setItem('selected_family_id', id);
-            }}
-          />
-        </AnimatedSection> */}
       </ScrollView>
       <BottomNavigationBar />
     </View>
@@ -303,40 +317,98 @@ const styles = StyleSheet.create({
   interactionRiskGroupsWrapper: {
     flex: 1,
   },
-  newsContentWrapper: {
+  articleContentWrapper: {
     flexDirection: 'row',
   },
-  newsImagePlaceholder: {
-    width: 64,
-    height: 64,
+  articleImagePlaceholder: {
+    width: 72,
+    height: 72,
     borderRadius: 12,
-    backgroundColor: Colors.lightGray,
+    backgroundColor: '#F0F8FF',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
+    borderWidth: 1,
+    borderColor: Colors.primary + '20',
   },
-  newsEmoji: {
-    fontSize: 30,
+  articleEmoji: {
+    fontSize: 32,
   },
-  newsContent: {
+  articleContent: {
     flex: 1,
     justifyContent: 'center',
   },
-  newsTitle: {
-    fontSize: 16,
+  articleCategory: {
+    backgroundColor: Colors.primary + '15',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+  },
+  articleCategoryText: {
+    fontSize: 11,
     fontWeight: '600',
+    color: Colors.primary,
+  },
+  articleTitle: {
+    fontSize: 16,
+    fontWeight: '700',
     color: Colors.text,
     marginBottom: 6,
+    lineHeight: 22,
   },
-  newsSubtitle: {
-    fontSize: 14,
-    color: Colors.mediumGray,
-    lineHeight: 20,
+  articleSubtitle: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    lineHeight: 18,
+    marginBottom: 8,
   },
-  newsDate: {
+  articleMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  articleAuthor: {
     fontSize: 12,
     color: Colors.mediumGray,
     fontWeight: '500',
-    marginTop: 8,
+  },
+  articleDot: {
+    fontSize: 12,
+    color: Colors.mediumGray,
+    marginHorizontal: 6,
+  },
+  articleDate: {
+    fontSize: 12,
+    color: Colors.mediumGray,
+    fontWeight: '500',
+  },
+  articleReadTime: {
+    fontSize: 12,
+    color: Colors.mediumGray,
+    fontWeight: '500',
+  },
+  viewAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    marginTop: 16,
+  },
+  viewAllText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.primary,
+    marginRight: 8,
+  },
+  viewAllIcon: {
+    fontSize: 16,
+    color: Colors.primary,
+    fontWeight: 'bold',
   },
 });
