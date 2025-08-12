@@ -14,6 +14,8 @@ import { FAMILY_INTERACTION_DATA } from "@/constants/InteractionData";
 import { getLatestArticles } from "@/constants/SupplementArticles";
 import { useRouter } from 'expo-router';
 import UserService, { UserInfo } from '@/services/UserService';
+import ChatService, { DrugInteractionAnalysis } from '@/services/ChatService';
+import { useFocusEffect } from 'expo-router';
 
 // Module-level variable to track if animation has run once per session
 let hasAnimatedOnce = false;
@@ -55,6 +57,9 @@ export default function Index() {
   const router = useRouter();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>('사용자'); // 기본값
+  const [drugInteractionData, setDrugInteractionData] = useState<DrugInteractionAnalysis | null>(null);
+  const [isLoadingRiskData, setIsLoadingRiskData] = useState(false);
+  const [riskDataError, setRiskDataError] = useState<string | null>(null);
   const latestArticles = getLatestArticles(1); // 최신 아티클 1개만 가져오기
 
   // 선택된 가족 ID와 사용자 이름을 AsyncStorage에서 불러오기
@@ -76,6 +81,49 @@ export default function Index() {
       }
     })();
   }, []);
+
+  // 약물 상호작용 데이터 가져오기
+  const fetchDrugInteractionData = async (targetId?: string) => {
+    try {
+      setIsLoadingRiskData(true);
+      setRiskDataError(null);
+      console.log('🔍 Fetching drug interaction data for targetId:', targetId);
+      
+      const targetIdNumber = targetId ? parseInt(targetId) : undefined;
+      const analysisData = await ChatService.getDrugInteractionAnalysis(targetIdNumber);
+      
+      console.log('✅ Drug interaction data received:', analysisData);
+      setDrugInteractionData(analysisData);
+    } catch (error: any) {
+      console.error('❌ Failed to fetch drug interaction data:', error);
+      setRiskDataError(error.message || '위험도 정보를 불러올 수 없습니다.');
+      
+      // 에러 발생 시 기본값 설정
+      setDrugInteractionData({
+        riskRate: 0,
+        count: 0,
+        collisionCount: 0,
+        collisions: [],
+        duplicateCount: 0,
+        duplicates: [],
+        pairCount: 0,
+        warnings: [],
+        errors: []
+      });
+    } finally {
+      setIsLoadingRiskData(false);
+    }
+  };
+
+  // 화면 포커스될 때마다 데이터 새로고침
+  useFocusEffect(
+    React.useCallback(() => {
+      if (selectedId) {
+        console.log('🔄 Home screen focused - fetching drug interaction data for:', selectedId);
+        fetchDrugInteractionData(selectedId);
+      }
+    }, [selectedId])
+  );
 
   // This effect runs only once when the component mounts for the first time in the app session.
   // It sets the flag to true, so subsequent mounts/re-renders won't trigger the animation.
@@ -153,13 +201,31 @@ export default function Index() {
                 <View style={styles.card}>
                     <View style={styles.interactionRiskContent}>
                         <View style={styles.circularGaugeContainer}>
-                        <CircularGauge value={selectedId && FAMILY_INTERACTION_DATA[selectedId] ? FAMILY_INTERACTION_DATA[selectedId].riskScore : INTERACTION_DATA.riskScore} size={100} />
+                        {isLoadingRiskData ? (
+                          <View style={styles.loadingGauge}>
+                            <Text style={styles.loadingText}>분석 중...</Text>
+                          </View>
+                        ) : (
+                          <CircularGauge 
+                            value={drugInteractionData ? drugInteractionData.riskRate : 0} 
+                            size={100} 
+                            title={riskDataError ? "오류" : undefined}
+                          />
+                        )}
                         </View>
                         <View style={styles.interactionRiskGroupsWrapper}>
                         <InteractionRiskGroups
-                          dangerousCount={selectedId && FAMILY_INTERACTION_DATA[selectedId] ? FAMILY_INTERACTION_DATA[selectedId].dangerousCount : INTERACTION_DATA.dangerousCount}
-                          safeCount={selectedId && FAMILY_INTERACTION_DATA[selectedId] ? FAMILY_INTERACTION_DATA[selectedId].safeCount : INTERACTION_DATA.safeCount}
+                          dangerousCount={drugInteractionData ? drugInteractionData.collisionCount : 0}
+                          safeCount={drugInteractionData ? (drugInteractionData.count - drugInteractionData.collisionCount) : 0}
                         />
+                        {riskDataError && (
+                          <Text style={styles.errorText}>{riskDataError}</Text>
+                        )}
+                        {drugInteractionData && drugInteractionData.duplicateCount > 0 && (
+                          <Text style={styles.warningText}>
+                            중복 성분 {drugInteractionData.duplicateCount}개 발견
+                          </Text>
+                        )}
                         </View>
                     </View>
                 </View>
@@ -420,5 +486,30 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.primary,
     fontWeight: 'bold',
+  },
+  loadingGauge: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    fontSize: 12,
+    color: Colors.mediumGray,
+    fontWeight: '500',
+  },
+  errorText: {
+    fontSize: 12,
+    color: Colors.danger,
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
+  warningText: {
+    fontSize: 12,
+    color: '#F59E0B',
+    marginTop: 4,
+    fontWeight: '500',
   },
 });
