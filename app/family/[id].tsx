@@ -9,20 +9,14 @@ import { FamilyAvatar } from '@/components/FamilyGroup';
 import {
   getFamilyMemberById,
   getMedicationsByMemberId,
+  getDiseasesByMemberId,
+  getAllergiesByMemberId,
+  updateMemberDiseases,
+  updateMemberAllergies,
+  AVAILABLE_DISEASES,
+  AVAILABLE_ALLERGIES,
   MedicationInfo
 } from '@/constants/FamilyData';
-
-const AVAILABLE_DISEASES = [
-  '당뇨병', '고혈압', '무릎관절증', '만성요통',
-  '만성위염', '시력감퇴', '만성심질환', '알레르기',
-  '전립선 비대증', '치매',
-];
-
-const AVAILABLE_ALLERGIES = [
-  '게', '대두', '꽃가루', '땅콩',
-  '계란', '석류', '벌', '꿀',
-  '카페인 민감', 'MSG 민감',
-];
 
 export default function FamilyAlarmScreen() {
   const { id } = useLocalSearchParams();
@@ -36,8 +30,12 @@ export default function FamilyAlarmScreen() {
   const [selectedMedications, setSelectedMedications] = useState<string[]>([]);
   const [isEditingDiseases, setIsEditingDiseases] = useState(false);
   const [isEditingAllergies, setIsEditingAllergies] = useState(false);
-  const [diseases, setDiseases] = useState<string[]>(['당뇨병', '고혈압']); // Mock data
-  const [allergies, setAllergies] = useState<string[]>(['대두', '꽃가루']); // Mock data
+  const [diseases, setDiseases] = useState<string[]>(
+    getDiseasesByMemberId(id as string)
+  );
+  const [allergies, setAllergies] = useState<string[]>(
+    getAllergiesByMemberId(id as string)
+  );
 
   if (!familyMember) {
     return (
@@ -119,13 +117,23 @@ export default function FamilyAlarmScreen() {
   };
 
   const saveDiseases = () => {
-    setIsEditingDiseases(false);
-    // TODO: API 호출로 실제 저장
+    const success = updateMemberDiseases(id as string, diseases);
+    if (success) {
+      setIsEditingDiseases(false);
+      Alert.alert('저장 완료', '질환 정보가 업데이트되었습니다.');
+    } else {
+      Alert.alert('저장 실패', '질환 정보 저장 중 오류가 발생했습니다.');
+    }
   };
 
   const saveAllergies = () => {
-    setIsEditingAllergies(false);
-    // TODO: API 호출로 실제 저장
+    const success = updateMemberAllergies(id as string, allergies);
+    if (success) {
+      setIsEditingAllergies(false);
+      Alert.alert('저장 완료', '알레르기 정보가 업데이트되었습니다.');
+    } else {
+      Alert.alert('저장 실패', '알레르기 정보 저장 중 오류가 발생했습니다.');
+    }
   };
 
   const renderMedicationAlarm = (alarm: MedicationInfo) => (
