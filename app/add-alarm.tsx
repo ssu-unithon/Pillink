@@ -131,68 +131,116 @@ export default function AddAlarmScreen() {
   };
 
   const handleSave = async () => {
+    console.log('🚀 handleSave 함수 시작');
+    console.log('📋 Current state:', { 
+      medicationName, 
+      count, 
+      selectedTime, 
+      familyId, 
+      medicationId, 
+      isEditMode,
+      enabled 
+    });
+
+    console.log('🔍 필수 정보 검증:', {
+      'medicationName.trim()': medicationName?.trim(),
+      'count.trim()': count?.trim(),
+      'medicationName 길이': medicationName?.trim()?.length,
+      'count 길이': count?.trim()?.length
+    });
+
     if (!medicationName.trim() || !count.trim()) {
+      console.log('❌ 필수 정보 누락 - 상세:', {
+        medicationName: medicationName,
+        count: count,
+        medicationNameTrimmed: medicationName?.trim(),
+        countTrimmed: count?.trim()
+      });
       Alert.alert('필수 정보 누락', '약물 이름과 복용량을 입력해주세요.');
       return;
     }
 
     if (!familyId) {
+      console.log('❌ 가족 ID 없음');
       Alert.alert('오류', '가족 ID를 찾을 수 없습니다.');
       return;
     }
 
     try {
+      console.log('🔐 토큰 확인 중...');
       const token = await AsyncStorage.getItem('access_token');
       if (!token) {
+        console.log('❌ 토큰 없음');
         Alert.alert('인증 오류', '로그인이 필요합니다.');
         return;
       }
+      console.log('✅ 토큰 확인됨');
 
       if (isEditMode) {
+        console.log('✏️ 수정 모드 - API 요청 시작');
         // 약물 수정 - PATCH API 호출
+        const requestBody = {
+          pillId: parseInt(medicationId as string),
+          count: parseInt(count),
+          is_pined: enabled
+        };
+        console.log('📤 약물 수정 요청:', requestBody);
+
         const response = await fetch('https://pillink-backend-production.up.railway.app/pill', {
           method: 'PATCH',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            pillId: parseInt(medicationId as string),
-            count: parseInt(count),
-            is_pined: enabled
-          })
+          body: JSON.stringify(requestBody)
         });
 
+        console.log('📡 약물 수정 응답 상태:', response.status);
+
         if (response.ok) {
-          // 알림 시간 업데이트 (알림 ID가 있다면)
+          console.log('✅ 약물 수정 성공');
+          // 알림 시간 업데이트 - 실제 알림 ID 찾기
           const { hour, minute } = AlarmService.parseTime(selectedTime);
           
-          // 예시: 알림 ID를 약물 ID로 가정 (실제로는 알림 연동 로직 필요)
           try {
-            await AlarmService.updateAlarm({
-              alarmId: parseInt(medicationId as string),
-              hour,
-              minute
-            });
+            // 해당 가족 구성원의 알림 목록 가져와서 매칭되는 알림 ID 찾기
+            const alarmData = await AlarmService.getAlarms(parseInt(familyId as string));
+            const relatedAlarm = alarmData.find((alarm: any) => alarm.name === medicationName);
+            
+            if (relatedAlarm) {
+              console.log('Found related alarm for update:', relatedAlarm.id);
+              await AlarmService.updateAlarm({
+                alarmId: relatedAlarm.id,
+                hour,
+                minute
+              });
+              console.log('✅ Alarm time updated successfully');
+            } else {
+              console.warn('⚠️ No related alarm found for medication:', medicationName);
+            }
           } catch (alarmError) {
-            console.warn('알림 업데이트 실패:', alarmError);
+            console.warn('❌ 알림 업데이트 실패:', alarmError);
             // 약물 업데이트는 성공했으므로 경고만 표시
           }
           
           Alert.alert('약물 수정 완료', '약물 정보가 성공적으로 수정되었습니다.');
         } else {
-          throw new Error('약물 수정 API 호출 실패');
+          const errorText = await response.text();
+          console.log('❌ 약물 수정 실패:', response.status, errorText);
+          throw new Error(`약물 수정 API 호출 실패: ${response.status} ${errorText}`);
         }
       } else {
+        console.log('➕ 추가 모드 - 약물 직접 입력 화면으로 안내');
         // 약물 추가 - POST API 호출 (이 경우는 medication-input에서 처리되므로 기본적으로 비활성화)
         Alert.alert('안내', '약물 추가는 약물 직접 입력 화면에서 진행해주세요.');
         router.back();
         return;
       }
       
+      console.log('🔙 화면 돌아가기');
       router.back();
     } catch (error) {
-      console.error('Failed to save medication:', error);
+      console.error('❌ 약물 저장 중 오류 발생:', error);
       Alert.alert('오류', '약물 저장 중 오류가 발생했습니다.');
     }
   };

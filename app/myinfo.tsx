@@ -9,9 +9,15 @@ import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useState, useEffect } from 'react';
 import { useFocusEffect } from 'expo-router';
+import UserService, { UserInfo } from '@/services/UserService';
 
 function OverlappingAvatars({ data, selectedId }: { data: any[]; selectedId: string | null }) {
-  const familyMembers = data.filter(item => item.id !== 'invite');
+  const familyMembers = data.filter(item => item.id !== 'invite' && item.id !== 'create-family');
+  
+  if (familyMembers.length === 0) {
+    return null;
+  }
+  
   const totalWidth = (familyMembers.length - 1) * 28 + 48; // 겹침 간격 * (개수-1) + 마지막 아바타 너비
 
   return (
@@ -43,8 +49,8 @@ export default function MyInfoScreen() {
       // 토큰 확인
       const token = await AsyncStorage.getItem('access_token');
       if (!token) {
-        console.log('No access token found, showing only invite button');
-        setFamilyData([{ id: 'invite', type: 'invite' }]);
+        console.log('No access token found, showing create group option');
+        setFamilyData([{ id: 'create-family', type: 'create-family' }]);
         return;
       }
       
@@ -66,10 +72,17 @@ export default function MyInfoScreen() {
       ];
       
       setFamilyData(convertedData);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch family data:', error);
-      // 실패 시 빈 배열과 초대 버튼만 표시
-      setFamilyData([{ id: 'invite', type: 'invite' }]);
+      
+      // 404 오류인 경우 가족 그룹이 없다는 뜻
+      if (error.message?.includes('404') || error.message?.includes('가족 그룹 조회 API 호출 실패')) {
+        console.log('No family group found, showing create group option');
+        setFamilyData([{ id: 'create-family', type: 'create-family' }]);
+      } else {
+        // 다른 오류의 경우 초대 버튼만 표시
+        setFamilyData([{ id: 'invite', type: 'invite' }]);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -85,6 +98,7 @@ export default function MyInfoScreen() {
   // 화면에 포커스될 때마다 가족 데이터 새로고침
   useFocusEffect(
     React.useCallback(() => {
+      console.log('🔄 MyInfo screen focused - refreshing family data');
       fetchFamilyData();
     }, [])
   );

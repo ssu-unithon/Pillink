@@ -209,7 +209,7 @@
 
 ## Family
 
-- [ GET ] 그룹 조회 `/famliy` ✅
+- [ GET ] 그룹 조회 `/family` ✅
 
     ```json
     {
@@ -236,8 +236,8 @@
     }
     ```
 
-- [ GET ] 그룹 초대 `/famliy/invite`
-    - `/famliy/invite?targetPhone=guest`
+- [ GET ] 그룹 초대 `/family/invite`
+    - `/family/invite?targetPhone=guest`
 
     ```json
     {
@@ -274,8 +274,8 @@
     }
     ```
 
-- [ GET ] 그룹 탈퇴 `/famliy/leave`
-- [ POST ] 그룹 생성 `/famliy`
+- [ GET ] 그룹 탈퇴 `/family/leave`
+- [ POST ] 그룹 생성 `/family`
 
     ```json
     {

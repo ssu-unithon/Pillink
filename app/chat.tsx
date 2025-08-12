@@ -21,6 +21,8 @@ import BottomNavigationBar from '../components/BottomNavigationBar';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import ChatService, { ChatMessage } from '@/services/ChatService';
+import { useFocusEffect } from 'expo-router';
 
 // Enable LayoutAnimation for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -118,21 +120,82 @@ const TypingIndicator = () => {
 
 
 export default function ChatScreen() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: '안녕하세요! 저는 PillLink AI입니다 🤖\n약물 복용, 부작용, 상호작용에 대해 궁금한 점이 있으시면 언제든 물어보세요!',
-      isUser: false,
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
   const scrollButtonAnim = useRef(new Animated.Value(0)).current;
+
+  // 채팅 히스토리 로드
+  const loadChatHistory = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const chatHistory = await ChatService.getChatHistory();
+      console.log('💬 Chat history loaded:', chatHistory.length, 'messages');
+      
+      // API 데이터를 앱의 Message 형식으로 변환
+      const convertedMessages: Message[] = chatHistory.map((msg: ChatMessage) => ({
+        id: msg.id.toString(),
+        text: msg.content,
+        isUser: msg.sender_type === 'user',
+        timestamp: new Date(msg.createdAt)
+      }));
+      
+      // 기본 웰컴 메시지가 없으면 추가
+      if (convertedMessages.length === 0) {
+        convertedMessages.unshift({
+          id: 'welcome',
+          text: '안녕하세요! 저는 PillLink AI입니다 🤖\n약물 복용, 부작용, 상호작용에 대해 궁금한 점이 있으시면 언제든 물어보세요!',
+          isUser: false,
+          timestamp: new Date(),
+        });
+      }
+      
+      setMessages(convertedMessages);
+    } catch (error: any) {
+      console.error('❌ Failed to load chat history:', error);
+      
+      // 에러 유형별 메시지 설정
+      let errorMessage = '채팅 기록을 불러오는데 실패했습니다.';
+      
+      if (error.message?.includes('네트워크 연결')) {
+        errorMessage = '네트워크 연결을 확인해주세요.';
+      } else if (error.message?.includes('401') || error.message?.includes('인증')) {
+        errorMessage = '로그인이 필요합니다. 설정에서 다시 로그인해주세요.';
+      } else if (error.message?.includes('404')) {
+        // 404는 채팅 기록이 없다는 의미일 수 있으므로 에러로 처리하지 않음
+        errorMessage = '';
+      }
+      
+      if (errorMessage) {
+        setError(errorMessage);
+      }
+      
+      // 에러 발생 시 기본 웰컴 메시지 표시
+      setMessages([{
+        id: 'welcome',
+        text: '안녕하세요! 저는 PillLink AI입니다 🤖\n약물 복용, 부작용, 상호작용에 대해 궁금한 점이 있으시면 언제든 물어보세요!\n\n💡 채팅 기록이 없어 새로운 대화를 시작합니다.',
+        isUser: false,
+        timestamp: new Date(),
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 화면 포커스 시 채팅 히스토리 로드
+  useFocusEffect(
+    React.useCallback(() => {
+      loadChatHistory();
+    }, [])
+  );
 
   useEffect(() => {
     Animated.timing(scrollButtonAnim, {
@@ -143,22 +206,21 @@ export default function ChatScreen() {
   }, [showScrollToBottom]);
 
   const quickQuestions = [
-    '💊 약물 상호작용이 궁금해요',
+    '💊 내 약물 상호작용을 분석해주세요',
     '⚠️ 부작용 증상을 확인하고 싶어요',
     '⏰ 복용 시간을 조정하고 싶어요',
     '🍽️ 음식과 함께 먹어도 되나요?',
   ];
 
-  const handleSendMessage = (text: string, isQuickQuestion = false) => {
+  const handleSendMessage = async (text: string, isQuickQuestion = false) => {
     const content = text.trim();
-    if (!content) return;
+    if (!content || isTyping) return;
 
     if (isQuickQuestion) {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } else {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -172,42 +234,145 @@ export default function ChatScreen() {
     if (!isQuickQuestion) setInputText('');
     
     setIsTyping(true);
+    setError(null);
 
-    // AI 응답 시뮬레이션
-    setTimeout(() => {
-      const aiResponse: Message = {
+    try {
+      console.log('🔄 Sending message to AI:', content);
+      
+      // 약물 상호작용 분석 요청인지 확인
+      if (content.includes('상호작용을 분석') || content.includes('상호작용 분석')) {
+        await handleDrugInteractionAnalysis();
+        return;
+      }
+      
+      // API를 통해 메시지 전송
+      const aiResponse = await ChatService.sendMessage(content);
+      console.log('✅ AI response received:', aiResponse);
+      
+      const aiMessage: Message = {
+        id: aiResponse.id.toString(),
+        text: aiResponse.content,
+        isUser: false,
+        timestamp: new Date(aiResponse.createdAt),
+      };
+      
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setMessages((prev) => [...prev, aiMessage]);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      
+    } catch (error: any) {
+      console.error('❌ Failed to send message:', error);
+      
+      // 에러 유형별 맞춤 응답
+      let errorText = '죄송합니다. 현재 서비스에 일시적인 문제가 발생했습니다.';
+      
+      if (error.message?.includes('네트워크 연결')) {
+        errorText = '네트워크 연결을 확인해주세요.\n\n📶 WiFi 또는 모바일 데이터 연결 상태를 확인하거나 잠시 후 다시 시도해주세요.';
+      } else if (error.message?.includes('401') || error.message?.includes('인증')) {
+        errorText = '로그인이 만료되었습니다.\n\n🔐 설정에서 다시 로그인해주세요.';
+      } else if (error.message?.includes('400')) {
+        errorText = '요청 형식에 오류가 있습니다.\n\n🔧 앱을 최신 버전으로 업데이트하거나 개발자에게 문의해주세요.\n\n기술적 오류: API 요청 파라미터 문제';
+      } else if (error.message?.includes('500')) {
+        errorText = '서버에 일시적인 문제가 발생했습니다.\n\n⚙️ 서버 복구 중이니 잠시 후 다시 시도해주세요.';
+      } else if (error.message?.includes('404')) {
+        errorText = 'API 엔드포인트를 찾을 수 없습니다.\n\n🔧 앱을 최신 버전으로 업데이트해주세요.';
+      } else {
+        errorText = '알 수 없는 오류가 발생했습니다.\n\n🔄 앱을 재시작하거나 잠시 후 다시 시도해주세요.';
+      }
+      
+      const fallbackResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: getAIResponse(content),
+        text: errorText,
         isUser: false,
         timestamp: new Date(),
       };
+      
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setMessages((prev) => [...prev, aiResponse]);
+      setMessages((prev) => [...prev, fallbackResponse]);
+      setError(error.message || '메시지 전송에 실패했습니다.');
+    } finally {
       setIsTyping(false);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }, 1500);
+    }
   };
 
-  const getAIResponse = (userText: string): string => {
-    const text = userText.toLowerCase();
-
-    if (text.includes('상호작용') || text.includes('같이') || text.includes('함께')) {
-      return '약물 상호작용에 대해 문의해주셨네요! 🔍\n\n현재 복용 중인 약물들을 알려주시면 더 정확한 상호작용 정보를 제공해드릴 수 있습니다.\n\n⚠️ 중요: 이 정보는 참고용이며, 정확한 진단과 처방은 의사나 약사와 상담하시기 바랍니다.';
+  // 약물 상호작용 분석 처리
+  const handleDrugInteractionAnalysis = async () => {
+    try {
+      console.log('🔍 Performing drug interaction analysis...');
+      
+      const analysis = await ChatService.getDrugInteractionAnalysis();
+      console.log('📊 Drug interaction analysis result:', analysis);
+      
+      const riskInfo = ChatService.getRiskLevel(analysis.riskRate);
+      
+      // 분석 결과를 포맷팅
+      let analysisText = `🔍 **약물 상호작용 분석 결과**\n\n`;
+      
+      analysisText += `📊 **전체 위험도: ${analysis.riskRate}% (${riskInfo.text})**\n`;
+      analysisText += `💊 **분석된 약물 수:** ${analysis.count}개\n`;
+      analysisText += `⚠️ **상호작용 쌍:** ${analysis.pairCount}개\n\n`;
+      
+      if (analysis.duplicateCount > 0) {
+        analysisText += `🔄 **중복 성분 발견:** ${analysis.duplicateCount}개\n`;
+        analysisText += `• ${analysis.duplicates.join(', ')}\n\n`;
+      }
+      
+      if (analysis.collisionCount > 0) {
+        analysisText += `⚡ **위험한 상호작용:** ${analysis.collisionCount}개\n`;
+        analysisText += `• ${analysis.collisions.join(', ')}\n\n`;
+      }
+      
+      if (analysis.warnings.length > 0) {
+        analysisText += `⚠️ **주의사항:**\n`;
+        analysis.warnings.forEach((warning, index) => {
+          analysisText += `${index + 1}. ${warning.type} ${warning.ingredient}`;
+          if (warning.reason) {
+            analysisText += ` - ${warning.reason}`;
+          }
+          analysisText += '\n';
+        });
+        analysisText += '\n';
+      }
+      
+      if (analysis.errors.length > 0) {
+        analysisText += `❌ **오류:**\n• ${analysis.errors.join('\n• ')}\n\n`;
+      }
+      
+      analysisText += `💡 **권장사항:**\n`;
+      if (analysis.riskRate >= 70) {
+        analysisText += `• 즉시 의사 또는 약사와 상담하세요\n• 약물 복용을 중단하고 전문가의 조언을 구하세요`;
+      } else if (analysis.riskRate >= 40) {
+        analysisText += `• 의사 또는 약사와 상담하여 복용법을 조정하세요\n• 복용 시간을 조절하거나 용량을 변경할 필요가 있을 수 있습니다`;
+      } else {
+        analysisText += `• 현재 복용 중인 약물들은 비교적 안전합니다\n• 정기적인 검진을 통해 지속적으로 모니터링하세요`;
+      }
+      
+      analysisText += `\n\n⚠️ **중요:** 이 분석은 참고용이며, 정확한 진단과 처방은 의료 전문가와 상담하시기 바랍니다.`;
+      
+      const analysisMessage: Message = {
+        id: Date.now().toString(),
+        text: analysisText,
+        isUser: false,
+        timestamp: new Date(),
+      };
+      
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setMessages((prev) => [...prev, analysisMessage]);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      
+    } catch (error: any) {
+      console.error('❌ Failed to analyze drug interactions:', error);
+      
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        text: '죄송합니다. 약물 상호작용 분석 중 오류가 발생했습니다.\n\n현재 등록된 약물이 없거나 서비스에 일시적인 문제가 있을 수 있습니다.\n\n약물을 먼저 등록하시거나 잠시 후 다시 시도해주세요.',
+        isUser: false,
+        timestamp: new Date(),
+      };
+      
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setMessages((prev) => [...prev, errorMessage]);
     }
-
-    if (text.includes('부작용') || text.includes('증상')) {
-      return '부작용 증상에 대해 궁금하시군요! 💡\n\n어떤 약물의 부작용이 궁금하신가요? 구체적인 약물명을 알려주시면 해당 약물의 주요 부작용과 대처법을 안내해드리겠습니다.\n\n🚨 심각한 부작용이 의심되시면 즉시 의료진과 상담하세요.';
-    }
-
-    if (text.includes('시간') || text.includes('언제')) {
-      return '복용 시간에 대해 문의해주셨네요! ⏰\n\n대부분의 약물은 일정한 시간 간격으로 복용하는 것이 중요합니다.\n\n• 하루 1회: 매일 같은 시간\n• 하루 2회: 12시간 간격\n• 하루 3회: 8시간 간격\n\n구체적인 약물명을 알려주시면 더 정확한 복용법을 안내해드릴게요!';
-    }
-
-    if (text.includes('음식') || text.includes('식사')) {
-      return '음식과의 복용에 대해 궁금하시군요! 🍽️\n\n약물마다 음식과의 상호작용이 다릅니다:\n\n• 식전 복용: 위산 분비 전, 흡수율 높임\n• 식후 복용: 위장 보호, 부작용 감소\n• 공복 복용: 빠른 흡수 필요시\n\n어떤 약물에 대해 궁금하신가요?';
-    }
-
-    return '질문해주셔서 감사합니다! 😊\n\n더 정확한 답변을 위해 구체적인 약물명이나 상황을 알려주시면 좋겠어요.\n\n약물 상호작용, 부작용, 복용법 등 무엇이든 물어보세요!\n\n💡 언제나 전문의와의 상담을 우선으로 하시기 바랍니다.';
   };
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -255,10 +420,32 @@ export default function ChatScreen() {
                 onScroll={handleScroll}
                 scrollEventThrottle={16}
             >
-                {messages.map((msg) => (
-                <MessageItem key={msg.id} message={msg} onLongPress={handleLongPress} />
-                ))}
-                {isTyping && <TypingIndicator />}
+                {isLoading ? (
+                  <View style={styles.loadingContainer}>
+                    <TypingIndicator />
+                    <Text style={styles.loadingText}>채팅 기록을 불러오는 중...</Text>
+                  </View>
+                ) : (
+                  <>
+                    {error && (
+                      <View style={styles.errorContainer}>
+                        <Ionicons name="warning-outline" size={24} color={Colors.danger} />
+                        <Text style={styles.errorText}>{error}</Text>
+                        <TouchableOpacity 
+                          style={styles.retryButton}
+                          onPress={loadChatHistory}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={styles.retryText}>다시 시도</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                    {messages.map((msg) => (
+                      <MessageItem key={msg.id} message={msg} onLongPress={handleLongPress} />
+                    ))}
+                    {isTyping && <TypingIndicator />}
+                  </>
+                )}
             </ScrollView>
             <Animated.View style={[styles.scrollToBottomButton, {opacity: scrollButtonAnim, transform: [{scale: scrollButtonAnim}]}]}>
                 <TouchableOpacity onPress={scrollToBottom}>
@@ -287,6 +474,15 @@ export default function ChatScreen() {
           )}
 
           <View style={styles.inputContainer}>
+            {error?.includes('네트워크') && (
+              <View style={styles.connectionStatus}>
+                <Ionicons name="wifi-outline" size={16} color={Colors.danger} />
+                <Text style={styles.connectionText}>연결 상태를 확인해주세요</Text>
+                <TouchableOpacity onPress={loadChatHistory} style={styles.reconnectButton}>
+                  <Text style={styles.reconnectText}>재연결</Text>
+                </TouchableOpacity>
+              </View>
+            )}
             <View style={[styles.inputWrapper, { paddingBottom: Platform.OS === 'ios' ? insets.bottom + 8 : 8}]}>
               <TextInput
                 style={styles.textInput}
@@ -298,17 +494,18 @@ export default function ChatScreen() {
                 maxLength={500}
                 onFocus={() => setIsInputFocused(true)}
                 onBlur={() => setIsInputFocused(false)}
+                editable={!isTyping && !error?.includes('로그인')}
               />
               <TouchableOpacity
                 style={[
                   styles.sendButton,
-                  { backgroundColor: inputText.trim() ? Colors.primary : Colors.lightGray },
+                  { backgroundColor: (inputText.trim() && !isTyping) ? Colors.primary : Colors.lightGray },
                 ]}
                 onPress={() => handleSendMessage(inputText)}
-                disabled={!inputText.trim()}
+                disabled={!inputText.trim() || isTyping || error?.includes('로그인')}
                 activeOpacity={0.7}
               >
-                <Ionicons name="arrow-up" size={20} color={inputText.trim() ? '#fff' : Colors.mediumGray} />
+                <Ionicons name="arrow-up" size={20} color={(inputText.trim() && !isTyping) ? '#fff' : Colors.mediumGray} />
               </TouchableOpacity>
             </View>
           </View>
@@ -497,5 +694,68 @@ const styles = StyleSheet.create({
       bottom: 20,
       right: 20,
       zIndex: 10,
-  }
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: Colors.mediumGray,
+    marginTop: 16,
+  },
+  errorContainer: {
+    alignItems: 'center',
+    backgroundColor: '#FEF2F2',
+    borderRadius: 12,
+    padding: 20,
+    marginVertical: 16,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  errorText: {
+    fontSize: 14,
+    color: Colors.danger,
+    textAlign: 'center',
+    marginVertical: 8,
+  },
+  retryButton: {
+    backgroundColor: Colors.danger,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    marginTop: 8,
+  },
+  retryText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  connectionStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#FEF2F2',
+    borderTopWidth: 1,
+    borderTopColor: '#FECACA',
+  },
+  connectionText: {
+    fontSize: 14,
+    color: Colors.danger,
+    marginLeft: 8,
+    flex: 1,
+  },
+  reconnectButton: {
+    backgroundColor: Colors.danger,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  reconnectText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
 });

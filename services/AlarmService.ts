@@ -16,6 +16,8 @@ export interface CreateAlarmRequest {
   is_enabled: boolean;
   name: string;
   count: number;
+  itemSeq?: string;
+  image_url?: string;
 }
 
 export interface UpdateAlarmRequest {

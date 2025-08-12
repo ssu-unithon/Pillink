@@ -163,7 +163,9 @@ export default function MedicationInput() {
             minute,
             is_enabled: true,
             name: selectedMedication.itemName,
-            count: parseInt(count)
+            count: parseInt(count),
+            itemSeq: selectedMedication.itemSeq,
+            image_url: selectedMedication.itemImage || ""
           });
           console.log('Alarm created successfully for medication');
         } catch (alarmError) {

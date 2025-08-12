@@ -26,6 +26,17 @@ const FamilyListItem = ({ item }: { item: any }) => {
     );
   }
 
+  if (item.type === 'create-family') {
+    return (
+      <TouchableOpacity style={styles.row} activeOpacity={0.7} onPress={() => router.push('/create-family')}>
+        <View style={styles.createFamilyCircle}>
+          <Ionicons name="people" size={24} color="#10B981" />
+        </View>
+        <Text style={styles.createFamilyText}>가족 그룹 생성</Text>
+      </TouchableOpacity>
+    );
+  }
+
   return (
     <TouchableOpacity
       style={styles.row}
@@ -63,6 +74,16 @@ const FamilyGroup = ({ data, showAvatars = true, onSelectMember, selectedId }: {
         </TouchableOpacity>
       );
     }
+    if (item.type === 'create-family') {
+      return (
+        <TouchableOpacity style={styles.row} activeOpacity={0.7} onPress={() => router.push('/create-family')}>
+          <View style={styles.createFamilyCircle}>
+            <Ionicons name="people" size={24} color="#10B981" />
+          </View>
+          <Text style={styles.createFamilyText}>가족 그룹 생성</Text>
+        </TouchableOpacity>
+      );
+    }
     return (
       <View style={styles.row}>
         {showAvatars && (
@@ -80,7 +101,10 @@ const FamilyGroup = ({ data, showAvatars = true, onSelectMember, selectedId }: {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.iconContainer}
-          onPress={() => router.push(`/family/${item.id}`)}
+          onPress={() => {
+            console.log('🔧 Settings clicked for:', item.name, 'with ID:', item.id);
+            router.push(`/family/${item.id}`);
+          }}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <MaterialIcons name="settings" size={20} color="#9CA3AF" />
@@ -154,6 +178,24 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '600',
     color: '#4285F4',
+    letterSpacing: -0.2,
+  },
+  createFamilyCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#ECFDF5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+    borderWidth: 2,
+    borderColor: '#A7F3D0',
+    borderStyle: 'dashed',
+  },
+  createFamilyText: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#10B981',
     letterSpacing: -0.2,
   },
   name: {

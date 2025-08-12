@@ -1,66 +1,66 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import PrimaryButton from '@/components/PrimaryButton';
 import FamilyService from '@/services/FamilyService';
 
-const InviteFamilyMember = () => {
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
+const CreateFamily = () => {
+  const [familyName, setFamilyName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const router = useRouter();
 
-  const validatePhone = (phone: string) => {
-    // 간단한 휴대폰 번호 유효성 검사 (010-xxxx-xxxx 또는 010xxxxxxxx)
-    return /^01[016789]-?\d{3,4}-?\d{4}$/.test(phone);
+  const validateFamilyName = (name: string) => {
+    return name.trim().length >= 2 && name.trim().length <= 20;
   };
 
-  const handleInvite = async () => {
+  const handleCreateFamily = async () => {
     setError('');
-    if (!name.trim() || !phone.trim()) {
-      setError('이름과 전화번호를 모두 입력해주세요.');
+    
+    if (!familyName.trim()) {
+      setError('가족 그룹 이름을 입력해주세요.');
       return;
     }
-    if (!validatePhone(phone)) {
-      setError('올바른 전화번호 형식을 입력해주세요.');
+    
+    if (!validateFamilyName(familyName)) {
+      setError('가족 그룹 이름은 2자 이상 20자 이하로 입력해주세요.');
       return;
     }
     
     setLoading(true);
     try {
-      console.log('🔄 Inviting family member:', { name, phone });
+      console.log('🔄 Creating family group:', familyName.trim());
       
-      // API를 통한 가족 초대
-      const result = await FamilyService.inviteToFamily(phone);
-      console.log('✅ Invite successful:', result);
+      // API를 통한 가족 그룹 생성
+      const result = await FamilyService.createFamily(familyName.trim());
+      console.log('✅ Family group created successfully:', result);
       
-      // 성공적으로 초대된 경우
+      // 성공적으로 생성된 경우
       Alert.alert(
-        '초대 완료', 
-        `${name}님(${phone})을 가족 그룹에 초대했습니다.\n\n해당 번호로 앱 설치 안내 메시지가 전송됩니다.`,
+        '가족 그룹 생성 완료', 
+        `'${familyName.trim()}' 그룹이 생성되었습니다.\n\n이제 가족 구성원을 초대할 수 있습니다.`,
         [
           {
             text: '확인',
-            onPress: () => router.back()
+            onPress: () => router.replace('/myinfo') // replace로 뒤로가기 방지
           }
         ]
       );
     } catch (error: any) {
-      console.error('❌ Failed to invite family member:', error);
+      console.error('❌ Failed to create family group:', error);
       
       // 에러 메시지 세분화
-      let errorMessage = '초대에 실패했습니다. 다시 시도해주세요.';
+      let errorMessage = '가족 그룹 생성에 실패했습니다. 다시 시도해주세요.';
       
-      if (error.message?.includes('404')) {
-        errorMessage = '해당 전화번호로 가입된 사용자를 찾을 수 없습니다.';
-      } else if (error.message?.includes('400')) {
-        errorMessage = '이미 가족 그룹에 속한 사용자입니다.';
+      if (error.message?.includes('400')) {
+        errorMessage = '이미 가족 그룹에 속해 있거나 유효하지 않은 이름입니다.';
+      } else if (error.message?.includes('409')) {
+        errorMessage = '이미 같은 이름의 가족 그룹이 존재합니다.';
       } else if (error.message?.includes('403')) {
-        errorMessage = '초대 권한이 없습니다. 가족 그룹 관리자에게 문의하세요.';
+        errorMessage = '가족 그룹 생성 권한이 없습니다.';
       }
       
       setError(errorMessage);
@@ -79,7 +79,7 @@ const InviteFamilyMember = () => {
         >
           <Ionicons name="arrow-back" size={24} color="#1F2937" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>가족 초대하기</Text>
+        <Text style={styles.headerTitle}>가족 그룹 생성</Text>
         <View style={{ width: 40, height: 40 }} />
       </View>
 
@@ -87,60 +87,65 @@ const InviteFamilyMember = () => {
         {/* 설명 섹션 */}
         <View style={styles.descriptionSection}>
           <View style={styles.iconContainer}>
-            <Ionicons name="people" size={48} color={Colors.primary} />
+            <Ionicons name="people" size={64} color={Colors.primary} />
           </View>
-          <Text style={styles.title}>새 가족 구성원 초대</Text>
+          <Text style={styles.title}>새 가족 그룹 만들기</Text>
           <Text style={styles.description}>
-            이름과 전화번호를 입력하면{'\n'}초대 메시지를 보내드립니다
+            가족 구성원들과 함께 약물을 관리할 수 있는{'\n'}가족 그룹을 생성합니다
           </Text>
         </View>
 
         {/* 입력 폼 섹션 */}
         <View style={styles.formSection}>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>이름</Text>
+            <Text style={styles.label}>가족 그룹 이름</Text>
             <TextInput
               style={[
                 styles.input, 
-                focusedField === 'name' && styles.inputFocused,
-                error && !name.trim() ? styles.inputError : null
+                focusedField === 'familyName' && styles.inputFocused,
+                error && !familyName.trim() ? styles.inputError : null
               ]}
-              placeholder="가족 구성원의 이름을 입력하세요"
+              placeholder="예: 김씨네 가족, 우리 가족"
               placeholderTextColor={Colors.mediumGray}
-              value={name}
-              onChangeText={setName}
-              onFocus={() => setFocusedField('name')}
+              value={familyName}
+              onChangeText={setFamilyName}
+              onFocus={() => setFocusedField('familyName')}
               onBlur={() => setFocusedField(null)}
-              returnKeyType="next"
+              returnKeyType="done"
+              onSubmitEditing={handleCreateFamily}
+              maxLength={20}
             />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>전화번호</Text>
-            <TextInput
-              style={[
-                styles.input,
-                focusedField === 'phone' && styles.inputFocused,
-                error && (!phone.trim() || !validatePhone(phone)) ? styles.inputError : null
-              ]}
-              placeholder="010-0000-0000"
-              placeholderTextColor={Colors.mediumGray}
-              value={phone}
-              onChangeText={setPhone}
-              onFocus={() => setFocusedField('phone')}
-              onBlur={() => setFocusedField(null)}
-              keyboardType="phone-pad"
-              maxLength={13}
-            />
+            <Text style={styles.charCount}>{familyName.length}/20</Text>
           </View>
 
           {!!error && <Text style={styles.errorText}>{error}</Text>}
 
           <View style={styles.infoCard}>
             <Ionicons name="information-circle-outline" size={20} color={Colors.primary} />
-            <Text style={styles.infoText}>
-              초대받은 분이 앱을 설치하고 가입하면{'\n'}자동으로 가족 그룹에 추가됩니다
-            </Text>
+            <View style={styles.infoTextContainer}>
+              <Text style={styles.infoText}>
+                • 가족 그룹을 생성하면 관리자가 됩니다{'\n'}
+                • 다른 가족 구성원을 초대할 수 있습니다{'\n'}
+                • 서로의 약물 복용을 관리하고 알림을 받을 수 있습니다
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* 예시 그룹명 섹션 */}
+        <View style={styles.exampleSection}>
+          <Text style={styles.exampleTitle}>추천 그룹명</Text>
+          <View style={styles.exampleChips}>
+            {['우리 가족', '김씨네 집안', '행복한 가정', '건강 가족'].map((example) => (
+              <TouchableOpacity
+                key={example}
+                style={styles.exampleChip}
+                onPress={() => setFamilyName(example)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.exampleChipText}>{example}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
       </ScrollView>
@@ -148,11 +153,14 @@ const InviteFamilyMember = () => {
       {/* 하단 버튼 */}
       <View style={styles.bottomContainer}>
         <PrimaryButton
-          title="초대 보내기"
-          onPress={handleInvite}
+          title="가족 그룹 생성"
+          onPress={handleCreateFamily}
           loading={loading}
-          disabled={loading}
-          style={styles.inviteButton}
+          disabled={loading || !familyName.trim()}
+          style={[
+            styles.createButton,
+            (!familyName.trim() || loading) && styles.createButtonDisabled
+          ]}
         />
       </View>
     </View>
@@ -201,9 +209,9 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     backgroundColor: '#F0F8FF',
     alignItems: 'center',
     justifyContent: 'center',
@@ -240,6 +248,7 @@ const styles = StyleSheet.create({
   },
   inputGroup: {
     marginBottom: 20,
+    position: 'relative',
   },
   label: {
     fontSize: 16,
@@ -256,6 +265,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.text,
     backgroundColor: Colors.card,
+    paddingRight: 50,
   },
   inputFocused: {
     borderColor: Colors.primary,
@@ -268,6 +278,13 @@ const styles = StyleSheet.create({
   inputError: {
     borderColor: Colors.danger,
     backgroundColor: '#FFF5F5',
+  },
+  charCount: {
+    position: 'absolute',
+    right: 16,
+    top: 40,
+    fontSize: 12,
+    color: Colors.mediumGray,
   },
   errorText: {
     color: Colors.danger,
@@ -285,12 +302,49 @@ const styles = StyleSheet.create({
     borderLeftColor: Colors.primary,
     marginTop: 8,
   },
+  infoTextContainer: {
+    flex: 1,
+    marginLeft: 12,
+  },
   infoText: {
     fontSize: 14,
     color: Colors.textSecondary,
-    marginLeft: 12,
-    flex: 1,
     lineHeight: 20,
+  },
+  exampleSection: {
+    backgroundColor: Colors.card,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  exampleTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text,
+    marginBottom: 12,
+  },
+  exampleChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  exampleChip: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  exampleChipText: {
+    fontSize: 14,
+    color: Colors.text,
+    fontWeight: '500',
   },
   bottomContainer: {
     padding: 20,
@@ -298,10 +352,13 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: Colors.border,
   },
-  inviteButton: {
+  createButton: {
     backgroundColor: Colors.primary,
     minHeight: 54,
   },
+  createButtonDisabled: {
+    backgroundColor: Colors.lightGray,
+  },
 });
 
-export default InviteFamilyMember;
+export default CreateFamily;
