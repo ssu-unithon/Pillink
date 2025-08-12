@@ -238,6 +238,14 @@ export default function MyInfoScreen() {
                 <MaterialIcons name="person-add" size={24} color="#EC4899" />
                 <Text style={[styles.onboardingButtonText, { color: '#EC4899' }]}>회원가입 창</Text>
               </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.onboardingButton, { marginTop: 8, backgroundColor: '#F0FDF4', borderColor: '#10B981' }]}
+                onPress={() => router.push('/medication-reminder')}
+                activeOpacity={0.7}
+              >
+                <MaterialIcons name="notifications-active" size={24} color="#10B981" />
+                <Text style={[styles.onboardingButtonText, { color: '#10B981' }]}>약물 복용 알림</Text>
+              </TouchableOpacity>
               
               {/* 테스트 계정 로그인 버튼들 */}
               <View style={styles.testAccountsContainer}>
