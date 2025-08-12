@@ -38,12 +38,6 @@ function RootLayoutNav() {
     checkOnboardingStatus();
   }, []);
 
-  // AsyncStorage 변경을 감지하기 위한 interval
-  useEffect(() => {
-    const interval = setInterval(checkOnboardingStatus, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
   if (isLoading) {
     return (
       <View

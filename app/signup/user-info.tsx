@@ -30,6 +30,7 @@ export default function SignupUserInfo() {
   const [phoneError, setPhoneError] = useState('');
   const [selectedDiseases, setSelectedDiseases] = useState<string[]>([]);
   const [selectedAllergies, setSelectedAllergies] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateName = () => {
     if (name.trim() === '') {
@@ -62,13 +63,23 @@ export default function SignupUserInfo() {
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     const isNameValid = validateName();
     const isRrnValid = validateRrn();
     const isPhoneValid = validatePhone();
 
     if (isNameValid && isRrnValid && isPhoneValid) {
-      router.push('/signup/complete');
+      setIsSubmitting(true);
+      try {
+        // 실제 API 호출이 있다면 여기서 처리
+        await new Promise(resolve => setTimeout(resolve, 1000)); // 로딩 시뮬레이션
+        router.push('/signup/complete');
+      } catch (error) {
+        console.error('회원가입 오류:', error);
+        // 에러 처리
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -86,8 +97,8 @@ export default function SignupUserInfo() {
 
   return (
     <View style={styles.container}>
-      <StepHeader title="정보입력" />
-      <ProgressBar progress={70} />
+      <StepHeader title="정보입력" subtitle="개인정보와 질환정보를 입력해주세요" />
+      <ProgressBar progress={70} steps={["역할", "약관", "정보", "완료"]} currentStep={3} />
 
       <ScrollView style={styles.content}>
         {/* Input Fields */}
@@ -96,7 +107,7 @@ export default function SignupUserInfo() {
           <TextInput
             style={[styles.input, nameError ? styles.inputError : null]}
             placeholder="이름을 입력하세요"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={Colors.mediumGray}
             value={name}
             onChangeText={setName}
             onBlur={validateName}
@@ -108,7 +119,7 @@ export default function SignupUserInfo() {
             <TextInput
               style={[styles.input, styles.rrnInput, rrnError ? styles.inputError : null]}
               placeholder="앞 6자리"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={Colors.mediumGray}
               value={rrn1}
               onChangeText={setRrn1}
               keyboardType="number-pad"
@@ -119,7 +130,7 @@ export default function SignupUserInfo() {
             <TextInput
               style={[styles.input, styles.rrnInput, rrnError ? styles.inputError : null]}
               placeholder="뒤 1자리"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={Colors.mediumGray}
               value={rrn2}
               onChangeText={setRrn2}
               keyboardType="number-pad"
@@ -134,7 +145,7 @@ export default function SignupUserInfo() {
           <TextInput
             style={[styles.input, phoneError ? styles.inputError : null]}
             placeholder="ex) 01012345678"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={Colors.mediumGray}
             value={phone}
             onChangeText={setPhone}
             keyboardType="phone-pad"
@@ -171,7 +182,13 @@ export default function SignupUserInfo() {
       </ScrollView>
 
       <View style={styles.bottomContainer}>
-        <PrimaryButton title="다음" onPress={handleNext} />
+        <PrimaryButton 
+          title="다음" 
+          onPress={handleNext} 
+          loading={isSubmitting}
+          disabled={isSubmitting}
+          style={styles.nextButton}
+        />
       </View>
     </View>
   );
@@ -180,7 +197,7 @@ export default function SignupUserInfo() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background,
   },
   content: {
     flex: 1,
@@ -193,20 +210,30 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#374151',
+    color: Colors.text,
     marginBottom: 8,
   },
   input: {
     height: 48,
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: Colors.border,
     borderRadius: 8,
     paddingHorizontal: 16,
     fontSize: 16,
     marginBottom: 4,
+    color: Colors.text,
+    backgroundColor: Colors.card,
+  },
+  inputFocused: {
+    borderColor: Colors.primary,
+    borderWidth: 2,
+    shadowColor: Colors.primary,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   inputError: {
-    borderColor: 'red',
+    borderColor: Colors.error,
   },
   rrnRow: {
     flexDirection: 'row',
@@ -218,54 +245,69 @@ const styles = StyleSheet.create({
   },
   rrnDash: {
     fontSize: 18,
-    color: '#9CA3AF',
+    color: Colors.mediumGray,
     marginHorizontal: 12,
   },
   errorText: {
-    color: 'red',
+    color: Colors.error,
     fontSize: 12,
     marginBottom: 8,
   },
   title: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#111',
+    color: Colors.text,
     marginBottom: 16,
   },
   highlight: {
-    color: '#6366F1',
+    color: Colors.primary,
   },
   chipContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
   },
   chip: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: Colors.lightGray,
     borderRadius: 20,
     paddingVertical: 10,
     paddingHorizontal: 16,
     marginRight: 12,
     marginBottom: 12,
+    minHeight: 44,
+    justifyContent: 'center',
+    shadowColor: Colors.shadow,
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   chipSelected: {
-    backgroundColor: '#6366F1',
+    backgroundColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   chipText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#374151',
+    color: Colors.text,
   },
   chipTextSelected: {
     color: '#fff',
   },
   linkText: {
     fontSize: 14,
-    color: '#6B7280',
+    color: Colors.textSecondary,
     textDecorationLine: 'underline',
     textAlign: 'right',
   },
   bottomContainer: {
     paddingHorizontal: 20,
     paddingBottom: 40,
+    backgroundColor: Colors.background,
+  },
+  nextButton: {
+    backgroundColor: Colors.primary,
+    minHeight: 54,
   },
 });
