@@ -443,7 +443,7 @@
 
 ## Chat
 
-- [ GET ] 채팅 기록 조회 `/chat/histroy`
+- [ GET ] 채팅 기록 조회 `/chat/history`
 
     ```
     [
