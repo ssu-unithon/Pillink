@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import StepHeader from '@/components/signup/StepHeader';
@@ -9,19 +9,19 @@ import {Colors} from '@/constants/Colors';
 
 const AnimatedCheckbox = ({ isChecked, onPress, size = 24, style = {} }) => {
   const scaleAnim = useRef(new Animated.Value(isChecked ? 1 : 0.8)).current;
-  const colorAnim = useRef(new Animated.Value(isChecked ? 1 : 0)).current;
+  const opacityAnim = useRef(new Animated.Value(isChecked ? 1 : 0)).current;
 
   useEffect(() => {
     Animated.parallel([
       Animated.spring(scaleAnim, {
-        toValue: isChecked ? 1.1 : 0.9,
+        toValue: isChecked ? 1.05 : 0.95,
         duration: 200,
         useNativeDriver: true,
       }),
-      Animated.timing(colorAnim, {
+      Animated.timing(opacityAnim, {
         toValue: isChecked ? 1 : 0,
         duration: 200,
-        useNativeDriver: false,
+        useNativeDriver: true,
       }),
     ]).start(() => {
       if (isChecked) {
@@ -34,11 +34,6 @@ const AnimatedCheckbox = ({ isChecked, onPress, size = 24, style = {} }) => {
     });
   }, [isChecked]);
 
-  const animatedColor = colorAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['rgba(156, 163, 175, 1)', Colors.primary],
-  });
-
   return (
     <TouchableOpacity onPress={onPress} style={[styles.checkboxContainer, style]}>
       <Animated.View
@@ -46,13 +41,13 @@ const AnimatedCheckbox = ({ isChecked, onPress, size = 24, style = {} }) => {
           styles.checkbox,
           {
             transform: [{ scale: scaleAnim }],
-            borderColor: animatedColor,
+            borderColor: isChecked ? Colors.primary : '#9CA3AF',
             backgroundColor: isChecked ? Colors.primary : 'transparent',
           },
         ]}
       >
         {isChecked && (
-          <Animated.View style={{ opacity: colorAnim }}>
+          <Animated.View style={{ opacity: opacityAnim }}>
             <Ionicons name="checkmark" size={size * 0.7} color="#fff" />
           </Animated.View>
         )}
@@ -66,6 +61,14 @@ export default function SignupTerms() {
   const { role } = useLocalSearchParams();
   const [allAgreed, setAllAgreed] = useState(false);
   const [agreed, setAgreed] = useState([false, false, false, false]);
+
+  // 역할 파라미터 검증
+  useEffect(() => {
+    console.log('📝 Terms screen - received role:', role);
+    if (!role) {
+      console.warn('⚠️ No role parameter received');
+    }
+  }, [role]);
   const terms = [
     '개인정보 처리 목적',
     '개인정보처리및보유기간',
@@ -83,6 +86,21 @@ export default function SignupTerms() {
     newAgreed[idx] = !newAgreed[idx];
     setAgreed(newAgreed);
     setAllAgreed(newAgreed.every(Boolean));
+  };
+
+  const handleNext = () => {
+    try {
+      console.log('🔄 Proceeding to user-info with role:', role);
+      if (!allAgreed) {
+        Alert.alert('알림', '모든 약관에 동의해야 다음 단계로 진행할 수 있습니다.');
+        return;
+      }
+      const roleParam = role || 'patient'; // 기본값 설정
+      router.push(`/signup/user-info?role=${roleParam}`);
+    } catch (error) {
+      console.error('❌ Navigation error:', error);
+      Alert.alert('오류', '다음 단계로 이동하는 중 오류가 발생했습니다.');
+    }
   };
 
   return (
@@ -121,7 +139,7 @@ export default function SignupTerms() {
       </ScrollView>
 
       <View style={styles.bottomContainer}>
-        <PrimaryButton title="다음" onPress={() => router.push(`/signup/user-info?role=${role}`)} disabled={!allAgreed} style={allAgreed ? styles.nextBtn : styles.nextBtnDisabled} />
+        <PrimaryButton title="다음" onPress={handleNext} disabled={!allAgreed} style={allAgreed ? styles.nextBtn : styles.nextBtnDisabled} />
       </View>
     </View>
   );

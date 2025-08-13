@@ -41,8 +41,44 @@ class UserService {
     }
   }
 
-  // 현재 로그인한 사용자 정보 가져오기
+  // 현재 로그인한 사용자 정보 가져오기 (API 호출)
   async getCurrentUser(): Promise<UserInfo | null> {
+    try {
+      const headers = await this.getAuthHeaders();
+      
+      console.log('🔍 Fetching current user info from API...');
+      const response = await fetch(`${BASE_URL}/auth/me`, {
+        headers
+      });
+      
+      console.log('📡 User info response status:', response.status);
+      
+      if (!response.ok) {
+        // API 실패 시 토큰에서 정보 추출하여 fallback
+        console.warn('API failed, falling back to token decode');
+        return this.getCurrentUserFromToken();
+      }
+      
+      const userInfo = await response.json();
+      console.log('✅ User info from API:', userInfo);
+      
+      return {
+        id: userInfo.id,
+        name: userInfo.name || 'Unknown User',
+        email: userInfo.email || '',
+        phone: userInfo.phone || '',
+        role: userInfo.role || 'user',
+        provider: userInfo.provider || 'local'
+      };
+    } catch (error) {
+      console.error('❌ Failed to get current user from API:', error);
+      // 에러 발생 시 토큰에서 정보 추출
+      return this.getCurrentUserFromToken();
+    }
+  }
+
+  // JWT 토큰에서 사용자 정보 추출 (fallback)
+  private async getCurrentUserFromToken(): Promise<UserInfo | null> {
     try {
       const token = await AsyncStorage.getItem('access_token');
       if (!token) {
@@ -64,7 +100,7 @@ class UserService {
 
       return null;
     } catch (error) {
-      console.error('Failed to get current user:', error);
+      console.error('Failed to get user from token:', error);
       return null;
     }
   }

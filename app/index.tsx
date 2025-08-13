@@ -62,23 +62,30 @@ export default function Index() {
   const [riskDataError, setRiskDataError] = useState<string | null>(null);
   const latestArticles = getLatestArticles(1); // 최신 아티클 1개만 가져오기
 
-  // 선택된 가족 ID와 사용자 이름을 AsyncStorage에서 불러오기
+  // 사용자 정보 가져오기
+  const fetchUserInfo = async () => {
+    try {
+      console.log('🔍 Fetching current user info...');
+      const userInfo = await UserService.getCurrentUser();
+      if (userInfo && userInfo.name) {
+        console.log('✅ User name loaded:', userInfo.name);
+        setUserName(userInfo.name);
+      } else {
+        console.warn('❌ No user info found');
+        setUserName('사용자');
+      }
+    } catch (error) {
+      console.error('❌ Failed to get user name:', error);
+      setUserName('사용자');
+    }
+  };
+
+  // 선택된 가족 ID 불러오기
   useEffect(() => {
     (async () => {
-      // 가족 ID 불러오기
       const savedId = await AsyncStorage.getItem('selected_family_id');
       if (savedId) setSelectedId(savedId);
       else setSelectedId(FAMILY_DATA[1]?.id || null);
-      
-      // 사용자 이름 불러오기
-      try {
-        const userInfo = await UserService.getCachedUserInfo();
-        if (userInfo && userInfo.name) {
-          setUserName(userInfo.name);
-        }
-      } catch (error) {
-        console.error('Failed to get user name:', error);
-      }
     })();
   }, []);
 
@@ -118,8 +125,13 @@ export default function Index() {
   // 화면 포커스될 때마다 데이터 새로고침
   useFocusEffect(
     React.useCallback(() => {
+      console.log('🔄 Home screen focused - refreshing data');
+      // 사용자 정보 새로고침
+      fetchUserInfo();
+      
+      // 약물 상호작용 데이터 새로고침
       if (selectedId) {
-        console.log('🔄 Home screen focused - fetching drug interaction data for:', selectedId);
+        console.log('🔄 Fetching drug interaction data for:', selectedId);
         fetchDrugInteractionData(selectedId);
       }
     }, [selectedId])
@@ -209,7 +221,7 @@ export default function Index() {
                           <CircularGauge 
                             value={drugInteractionData ? drugInteractionData.riskRate : 0} 
                             size={100} 
-                            title={riskDataError ? "오류" : undefined}
+                            title={riskDataError ? "약물 등록 필요" : undefined}
                           />
                         )}
                         </View>
@@ -219,7 +231,12 @@ export default function Index() {
                           safeCount={drugInteractionData ? (drugInteractionData.count - drugInteractionData.collisionCount) : 0}
                         />
                         {riskDataError && (
-                          <Text style={styles.errorText}>{riskDataError}</Text>
+                          <Text style={styles.errorText}>
+                            {riskDataError.includes('등록') ? 
+                              '약물을 등록하면 상호작용을 분석해드려요' : 
+                              riskDataError
+                            }
+                          </Text>
                         )}
                         {drugInteractionData && drugInteractionData.duplicateCount > 0 && (
                           <Text style={styles.warningText}>

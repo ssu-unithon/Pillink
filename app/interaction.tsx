@@ -155,11 +155,16 @@ export default function InteractionScreen() {
               <CircularGauge 
                 value={drugInteractionData ? drugInteractionData.riskRate : 0} 
                 size={180} 
-                title={riskDataError ? "오류" : undefined}
+                title={riskDataError ? "약물 등록 필요" : undefined}
               />
             )}
             {riskDataError && (
-              <Text style={styles.errorText}>{riskDataError}</Text>
+              <Text style={styles.errorText}>
+                {riskDataError.includes('등록') ? 
+                  '약물을 등록하면 상호작용을 분석해드려요' : 
+                  riskDataError
+                }
+              </Text>
             )}
           </View>
           <View style={styles.interactionRiskGroupsWrapper}>

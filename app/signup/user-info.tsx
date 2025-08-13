@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import StepHeader from '@/components/signup/StepHeader';
@@ -33,6 +33,14 @@ export default function SignupUserInfo() {
   const [selectedAllergies, setSelectedAllergies] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // 역할 파라미터 검증
+  useEffect(() => {
+    console.log('📝 UserInfo screen - received role:', role);
+    if (!role) {
+      console.warn('⚠️ No role parameter received');
+    }
+  }, [role]);
+
   const validateName = () => {
     if (name.trim() === '') {
       setNameError('이름을 입력해주세요.');
@@ -65,22 +73,37 @@ export default function SignupUserInfo() {
   };
 
   const handleNext = async () => {
-    const isNameValid = validateName();
-    const isRrnValid = validateRrn();
-    const isPhoneValid = validatePhone();
+    try {
+      console.log('📝 UserInfo validation and submission started');
+      const isNameValid = validateName();
+      const isRrnValid = validateRrn();
+      const isPhoneValid = validatePhone();
 
-    if (isNameValid && isRrnValid && isPhoneValid) {
+      if (!isNameValid || !isRrnValid || !isPhoneValid) {
+        Alert.alert('입력 오류', '모든 필수 정보를 올바르게 입력해주세요.');
+        return;
+      }
+
       setIsSubmitting(true);
+      console.log('🔄 Submitting user info with role:', role);
+      
       try {
         // 실제 API 호출이 있다면 여기서 처리
         await new Promise(resolve => setTimeout(resolve, 1000)); // 로딩 시뮬레이션
-        router.push('/signup/complete');
+        
+        console.log('✅ User info submission successful');
+        const roleParam = role || 'patient'; // 기본값 설정
+        router.push(`/signup/complete?role=${roleParam}`);
       } catch (error) {
-        console.error('회원가입 오류:', error);
-        // 에러 처리
+        console.error('❌ 회원가입 오류:', error);
+        Alert.alert('회원가입 오류', '회원가입 중 오류가 발생했습니다. 다시 시도해주세요.');
       } finally {
         setIsSubmitting(false);
       }
+    } catch (error) {
+      console.error('❌ Unexpected error in handleNext:', error);
+      Alert.alert('오류', '예상치 못한 오류가 발생했습니다.');
+      setIsSubmitting(false);
     }
   };
 

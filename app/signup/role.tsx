@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import StepHeader from '@/components/signup/StepHeader';
@@ -8,6 +8,16 @@ import { Colors } from '@/constants/Colors';
 
 export default function SignupRole() {
   const router = useRouter();
+
+  const handleRoleSelection = (role: string) => {
+    try {
+      console.log('🔄 Role selected:', role);
+      router.push(`/signup/terms?role=${role}`);
+    } catch (error) {
+      console.error('❌ Navigation error:', error);
+      Alert.alert('오류', '다음 단계로 이동하는 중 오류가 발생했습니다.');
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -27,7 +37,7 @@ export default function SignupRole() {
           <View style={styles.roleBtnRow}>
             <TouchableOpacity 
               style={styles.roleCard} 
-              onPress={() => router.push('/signup/terms?role=guardian')}
+              onPress={() => handleRoleSelection('guardian')}
             >
               <View style={styles.roleIconContainer}>
                 <Ionicons name="shield-checkmark" size={32} color={Colors.primary} />
@@ -38,7 +48,7 @@ export default function SignupRole() {
             
             <TouchableOpacity 
               style={styles.roleCard} 
-              onPress={() => router.push('/signup/terms?role=patient')}
+              onPress={() => handleRoleSelection('patient')}
             >
               <View style={styles.roleIconContainer}>
                 <Ionicons name="person" size={32} color={Colors.primary} />

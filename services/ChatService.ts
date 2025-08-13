@@ -100,20 +100,39 @@ class ChatService {
   // GET /chat/risk
   async getDrugInteractionAnalysis(targetId?: number): Promise<DrugInteractionAnalysis> {
     try {
+      console.log('🔍 Drug interaction analysis request - targetId:', targetId);
       const headers = await this.getAuthHeaders();
       const url = targetId 
         ? `${BASE_URL}/chat/risk?targetId=${targetId}`
         : `${BASE_URL}/chat/risk`;
       
+      console.log('📡 Request URL:', url);
+      console.log('📡 Request headers:', headers);
+      
       const response = await fetch(url, { headers });
       
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response statusText:', response.statusText);
+      
       if (!response.ok) {
-        throw new Error('약물 상호작용 분석 API 호출 실패');
+        const errorText = await response.text();
+        console.error('❌ API Error Response:', errorText);
+        
+        // 400 에러 중 특정 메시지에 대한 처리
+        if (response.status === 400 && errorText.includes('복용 약 정보가 필요합니다')) {
+          throw new Error('복용 중인 약물을 먼저 등록해주세요.');
+        } else if (response.status === 400) {
+          throw new Error('약물 정보를 확인할 수 없습니다. 약물을 등록해주세요.');
+        }
+        
+        throw new Error(`약물 상호작용 분석 API 호출 실패 (${response.status}): ${errorText}`);
       }
       
-      return await response.json();
+      const data = await response.json();
+      console.log('✅ Drug interaction analysis response:', data);
+      return data;
     } catch (error) {
-      console.error('Failed to fetch drug interaction analysis:', error);
+      console.error('❌ Failed to fetch drug interaction analysis:', error);
       throw error;
     }
   }

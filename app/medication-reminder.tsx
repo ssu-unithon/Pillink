@@ -17,6 +17,7 @@ import { Colors } from '@/constants/Colors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AlarmService from '@/services/AlarmService';
+import IntakeLogService from '@/services/IntakeLogService';
 import * as Haptics from 'expo-haptics';
 import { useDeveloperMode } from '@/contexts/DevModeContext';
 
@@ -212,15 +213,22 @@ export default function MedicationReminderScreen() {
       const month = today.getMonth() + 1;
       const date = today.getDate();
       
-      // 복용 기록 API 호출 (예시)
-      // await fetch('/intake-log/check', {
-      //   method: 'POST',
-      //   body: JSON.stringify({
-      //     month,
-      //     date,
-      //     alarmId: medicationId
-      //   })
-      // });
+      // 복용 기록 API 호출
+      if (!isDeveloperMode) {
+        try {
+          await IntakeLogService.checkIntakeLog({
+            month,
+            date,
+            alarmId: medicationId
+          });
+          console.log('✅ Intake log recorded successfully');
+        } catch (error) {
+          console.error('❌ Failed to record intake log:', error);
+          // 복용 기록 실패해도 UI는 계속 진행
+        }
+      } else {
+        console.log('🔧 Developer mode: Skipping intake log API call');
+      }
 
       // 복용 완료 표시
       setSelectedMedicationId(medicationId);
@@ -342,11 +350,13 @@ export default function MedicationReminderScreen() {
         <View style={styles.medicationContent}>
           <View style={styles.medicationImageContainer}>
             {medication.image_url ? (
-              <Image
-                source={{ uri: medication.image_url }}
-                style={styles.medicationImage}
-                resizeMode="contain"
-              />
+              <View style={styles.medicationImageWrapper}>
+                <Image
+                  source={{ uri: medication.image_url }}
+                  style={styles.medicationImage}
+                  resizeMode="contain"
+                />
+              </View>
             ) : (
               <View style={styles.medicationImagePlaceholder}>
                 <MaterialIcons name="medication" size={32} color={Colors.primary} />
@@ -560,11 +570,21 @@ const styles = StyleSheet.create({
   medicationImageContainer: {
     marginRight: 16,
   },
-  medicationImage: {
+  medicationImageWrapper: {
     width: 60,
     height: 60,
     borderRadius: 12,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 4,
+  },
+  medicationImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
   },
   medicationImagePlaceholder: {
     width: 60,
