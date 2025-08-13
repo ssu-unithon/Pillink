@@ -4,13 +4,8 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import CustomSwitch from '@/components/CustomSwitch';
-import {
-  getMedicationsByMemberId,
-  MedicationInfo,
-  addMedicationToMember,
-  updateMedicationInfo,
-  removeMedicationFromMember
-} from '@/constants/FamilyData';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import AlarmService from '@/services/AlarmService';
 
 export default function AddAlarmScreen() {
   const router = useRouter();
@@ -25,22 +20,52 @@ export default function AddAlarmScreen() {
 
   const isEditMode = !!medicationId;
 
-  useEffect(() => {
-    if (isEditMode && familyId) {
-      const existingMedications = getMedicationsByMemberId(familyId as string);
-      const existingMedication = existingMedications.find(med => med.id === medicationId);
-      if (existingMedication) {
-        setMedicationName(existingMedication.medicationName);
-        setCount(existingMedication.dosage?.replace('정', '') || '1');
-        setSelectedTime(existingMedication.time);
-        setNotes(existingMedication.notes || '');
-        setEnabled(existingMedication.enabled);
+  // API에서 기존 약물 정보 가져오기
+  const fetchExistingMedication = async () => {
+    if (!isEditMode || !familyId || !medicationId) return;
+    
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      if (!token) return;
+      
+      // 약물 및 알림 정보 가져오기
+      const [pillResponse, alarmData] = await Promise.all([
+        fetch(`https://pillink-backend-production.up.railway.app/pill?targetId=${familyId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }),
+        AlarmService.getAlarms(parseInt(familyId as string))
+      ]);
+      
+      if (pillResponse.ok) {
+        const pillData = await pillResponse.json();
+        const existingPill = pillData.find((pill: any) => pill.id.toString() === medicationId);
+        
+        if (existingPill) {
+          setMedicationName(existingPill.name);
+          setCount(existingPill.count.toString());
+          setEnabled(existingPill.is_pined);
+          
+          // 알림 시간 설정
+          const relatedAlarm = alarmData.find((alarm: any) => alarm.name === existingPill.name);
+          if (relatedAlarm) {
+            setSelectedTime(AlarmService.formatTime(relatedAlarm.hour, relatedAlarm.minute));
+          }
+        }
       }
+    } catch (error) {
+      console.error('Failed to fetch existing medication:', error);
     }
+  };
+  
+  useEffect(() => {
+    fetchExistingMedication();
   }, [isEditMode, medicationId, familyId]);
 
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!isEditMode) {
       console.log('Not in edit mode, cannot delete');
       return;
@@ -56,19 +81,47 @@ export default function AddAlarmScreen() {
         { 
           text: '삭제', 
           style: 'destructive',
-          onPress: () => {
-            console.log('Confirmed deletion, calling removeMedicationFromMember with:', { familyId, medicationId });
-            const success = removeMedicationFromMember(familyId as string, medicationId as string);
-            console.log('Deletion result:', success);
-            
-            if (success) {
-              Alert.alert('삭제 완료', '약물이 성공적으로 삭제되었습니다.', [
-                {
-                  text: '확인',
-                  onPress: () => router.back()
+          onPress: async () => {
+            try {
+              const token = await AsyncStorage.getItem('access_token');
+              if (!token) {
+                Alert.alert('인증 오류', '로그인이 필요합니다.');
+                return;
+              }
+
+              // API를 통한 약물 삭제
+              const pillResponse = await fetch(`https://pillink-backend-production.up.railway.app/pill/${medicationId}`, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
                 }
-              ]);
-            } else {
+              });
+
+              if (pillResponse.ok) {
+                // 관련 알림도 삭제 (알림 ID를 아는 경우)
+                try {
+                  const alarmData = await AlarmService.getAlarms(parseInt(familyId as string));
+                  const relatedAlarm = alarmData.find((alarm: any) => alarm.name === medicationName);
+                  if (relatedAlarm) {
+                    // 알림 삭제 API가 있다면 여기서 호출
+                    console.log('관련 알림 삭제 필요:', relatedAlarm.id);
+                  }
+                } catch (alarmError) {
+                  console.warn('알림 삭제 실패:', alarmError);
+                }
+                
+                Alert.alert('삭제 완료', '약물이 성공적으로 삭제되었습니다.', [
+                  {
+                    text: '확인',
+                    onPress: () => router.back()
+                  }
+                ]);
+              } else {
+                throw new Error('약물 삭제 API 호출 실패');
+              }
+            } catch (error) {
+              console.error('Failed to delete medication:', error);
               Alert.alert('오류', '약물 삭제에 실패했습니다.');
             }
           }
@@ -77,46 +130,118 @@ export default function AddAlarmScreen() {
     );
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    console.log('🚀 handleSave 함수 시작');
+    console.log('📋 Current state:', { 
+      medicationName, 
+      count, 
+      selectedTime, 
+      familyId, 
+      medicationId, 
+      isEditMode,
+      enabled 
+    });
+
+    console.log('🔍 필수 정보 검증:', {
+      'medicationName.trim()': medicationName?.trim(),
+      'count.trim()': count?.trim(),
+      'medicationName 길이': medicationName?.trim()?.length,
+      'count 길이': count?.trim()?.length
+    });
+
     if (!medicationName.trim() || !count.trim()) {
+      console.log('❌ 필수 정보 누락 - 상세:', {
+        medicationName: medicationName,
+        count: count,
+        medicationNameTrimmed: medicationName?.trim(),
+        countTrimmed: count?.trim()
+      });
       Alert.alert('필수 정보 누락', '약물 이름과 복용량을 입력해주세요.');
       return;
     }
 
-    if (familyId) {
+    if (!familyId) {
+      console.log('❌ 가족 ID 없음');
+      Alert.alert('오류', '가족 ID를 찾을 수 없습니다.');
+      return;
+    }
+
+    try {
+      console.log('🔐 토큰 확인 중...');
+      const token = await AsyncStorage.getItem('access_token');
+      if (!token) {
+        console.log('❌ 토큰 없음');
+        Alert.alert('인증 오류', '로그인이 필요합니다.');
+        return;
+      }
+      console.log('✅ 토큰 확인됨');
+
       if (isEditMode) {
-        const success = updateMedicationInfo(familyId as string, medicationId as string, {
-          medicationName,
-          dosage: `${count}정`,
-          time: selectedTime,
-          notes,
-          enabled
+        console.log('✏️ 수정 모드 - API 요청 시작');
+        // 약물 수정 - PATCH API 호출
+        const requestBody = {
+          pillId: parseInt(medicationId as string),
+          count: parseInt(count),
+          is_pined: enabled
+        };
+        console.log('📤 약물 수정 요청:', requestBody);
+
+        const response = await fetch('https://pillink-backend-production.up.railway.app/pill', {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(requestBody)
         });
-        if (success) {
+
+        console.log('📡 약물 수정 응답 상태:', response.status);
+
+        if (response.ok) {
+          console.log('✅ 약물 수정 성공');
+          // 알림 시간 업데이트 - 실제 알림 ID 찾기
+          const { hour, minute } = AlarmService.parseTime(selectedTime);
+          
+          try {
+            // 해당 가족 구성원의 알림 목록 가져와서 매칭되는 알림 ID 찾기
+            const alarmData = await AlarmService.getAlarms(parseInt(familyId as string));
+            const relatedAlarm = alarmData.find((alarm: any) => alarm.name === medicationName);
+            
+            if (relatedAlarm) {
+              console.log('Found related alarm for update:', relatedAlarm.id);
+              await AlarmService.updateAlarm({
+                alarmId: relatedAlarm.id,
+                hour,
+                minute
+              });
+              console.log('✅ Alarm time updated successfully');
+            } else {
+              console.warn('⚠️ No related alarm found for medication:', medicationName);
+            }
+          } catch (alarmError) {
+            console.warn('❌ 알림 업데이트 실패:', alarmError);
+            // 약물 업데이트는 성공했으므로 경고만 표시
+          }
+          
           Alert.alert('약물 수정 완료', '약물 정보가 성공적으로 수정되었습니다.');
         } else {
-          Alert.alert('오류', '약물 수정에 실패했습니다.');
+          const errorText = await response.text();
+          console.log('❌ 약물 수정 실패:', response.status, errorText);
+          throw new Error(`약물 수정 API 호출 실패: ${response.status} ${errorText}`);
         }
       } else {
-        const medicationData = {
-          id: Date.now().toString(),
-          name: medicationName,
-          type: '일반의약품',
-          company: '',
-          dosage: `${count}정`,
-          time: selectedTime,
-          notes
-        };
-        const success = addMedicationToMember(familyId as string, medicationData);
-        if (success) {
-          Alert.alert('약물 추가 완료', '새로운 약물이 성공적으로 추가되었습니다.');
-        } else {
-          Alert.alert('오류', '약물 추가에 실패했습니다.');
-        }
+        console.log('➕ 추가 모드 - 약물 직접 입력 화면으로 안내');
+        // 약물 추가 - POST API 호출 (이 경우는 medication-input에서 처리되므로 기본적으로 비활성화)
+        Alert.alert('안내', '약물 추가는 약물 직접 입력 화면에서 진행해주세요.');
+        router.back();
+        return;
       }
+      
+      console.log('🔙 화면 돌아가기');
       router.back();
-    } else {
-      Alert.alert('오류', '가족 ID를 찾을 수 없습니다.');
+    } catch (error) {
+      console.error('❌ 약물 저장 중 오류 발생:', error);
+      Alert.alert('오류', '약물 저장 중 오류가 발생했습니다.');
     }
   };
 

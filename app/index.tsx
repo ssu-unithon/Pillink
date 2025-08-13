@@ -5,17 +5,17 @@ import CircularGauge from "../components/CircularGauge";
 import CalendarComponent from "../components/CalendarComponent";
 import { Colors } from "@/constants/Colors";
 import BottomNavigationBar from "../components/BottomNavigationBar";
-import SearchBar from '../components/SearchBar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { INTERACTION_DATA } from "@/constants/InteractionData";
 import { FAMILY_DATA } from "@/constants/FamilyData";
-import FamilyGroup from "@/components/FamilyGroup";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FAMILY_INTERACTION_DATA } from "@/constants/InteractionData";
-import { USER_NAME } from '@/constants/UserInfo';
 import { getLatestArticles } from "@/constants/SupplementArticles";
 import { useRouter } from 'expo-router';
+import UserService, { UserInfo } from '@/services/UserService';
+import ChatService, { DrugInteractionAnalysis } from '@/services/ChatService';
+import { useFocusEffect } from 'expo-router';
 
 // Module-level variable to track if animation has run once per session
 let hasAnimatedOnce = false;
@@ -56,9 +56,31 @@ export default function Index() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string>('사용자'); // 기본값
+  const [drugInteractionData, setDrugInteractionData] = useState<DrugInteractionAnalysis | null>(null);
+  const [isLoadingRiskData, setIsLoadingRiskData] = useState(false);
+  const [riskDataError, setRiskDataError] = useState<string | null>(null);
   const latestArticles = getLatestArticles(1); // 최신 아티클 1개만 가져오기
 
-  // 선택된 가족 ID를 AsyncStorage에서 불러오기
+  // 사용자 정보 가져오기
+  const fetchUserInfo = async () => {
+    try {
+      console.log('🔍 Fetching current user info...');
+      const userInfo = await UserService.getCurrentUser();
+      if (userInfo && userInfo.name) {
+        console.log('✅ User name loaded:', userInfo.name);
+        setUserName(userInfo.name);
+      } else {
+        console.warn('❌ No user info found');
+        setUserName('사용자');
+      }
+    } catch (error) {
+      console.error('❌ Failed to get user name:', error);
+      setUserName('사용자');
+    }
+  };
+
+  // 선택된 가족 ID 불러오기
   useEffect(() => {
     (async () => {
       const savedId = await AsyncStorage.getItem('selected_family_id');
@@ -66,6 +88,54 @@ export default function Index() {
       else setSelectedId(FAMILY_DATA[1]?.id || null);
     })();
   }, []);
+
+  // 약물 상호작용 데이터 가져오기
+  const fetchDrugInteractionData = async (targetId?: string) => {
+    try {
+      setIsLoadingRiskData(true);
+      setRiskDataError(null);
+      console.log('🔍 Fetching drug interaction data for targetId:', targetId);
+      
+      const targetIdNumber = targetId ? parseInt(targetId) : undefined;
+      const analysisData = await ChatService.getDrugInteractionAnalysis(targetIdNumber);
+      
+      console.log('✅ Drug interaction data received:', analysisData);
+      setDrugInteractionData(analysisData);
+    } catch (error: any) {
+      console.error('❌ Failed to fetch drug interaction data:', error);
+      setRiskDataError(error.message || '위험도 정보를 불러올 수 없습니다.');
+      
+      // 에러 발생 시 기본값 설정
+      setDrugInteractionData({
+        riskRate: 0,
+        count: 0,
+        collisionCount: 0,
+        collisions: [],
+        duplicateCount: 0,
+        duplicates: [],
+        pairCount: 0,
+        warnings: [],
+        errors: []
+      });
+    } finally {
+      setIsLoadingRiskData(false);
+    }
+  };
+
+  // 화면 포커스될 때마다 데이터 새로고침
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('🔄 Home screen focused - refreshing data');
+      // 사용자 정보 새로고침
+      fetchUserInfo();
+      
+      // 약물 상호작용 데이터 새로고침
+      if (selectedId) {
+        console.log('🔄 Fetching drug interaction data for:', selectedId);
+        fetchDrugInteractionData(selectedId);
+      }
+    }, [selectedId])
+  );
 
   // This effect runs only once when the component mounts for the first time in the app session.
   // It sets the flag to true, so subsequent mounts/re-renders won't trigger the animation.
@@ -102,7 +172,7 @@ export default function Index() {
         <AnimatedSection index={2} shouldAnimate={!hasAnimatedOnce}>
             <View style={styles.greetingContainer}>
             <Text style={styles.greetingText}>
-                안녕하세요, <Text style={styles.greetingHighlight}>{USER_NAME}님!</Text>
+                안녕하세요, <Text style={styles.greetingHighlight}>{userName}님!</Text>
             </Text>
             <Text style={styles.greetingSubtext}>
                 오늘도 건강한 하루 되세요 ✨
@@ -143,13 +213,36 @@ export default function Index() {
                 <View style={styles.card}>
                     <View style={styles.interactionRiskContent}>
                         <View style={styles.circularGaugeContainer}>
-                        <CircularGauge value={selectedId && FAMILY_INTERACTION_DATA[selectedId] ? FAMILY_INTERACTION_DATA[selectedId].riskScore : INTERACTION_DATA.riskScore} size={100} />
+                        {isLoadingRiskData ? (
+                          <View style={styles.loadingGauge}>
+                            <Text style={styles.loadingText}>분석 중...</Text>
+                          </View>
+                        ) : (
+                          <CircularGauge 
+                            value={drugInteractionData ? drugInteractionData.riskRate : 0} 
+                            size={100} 
+                            title={riskDataError ? "약물 등록 필요" : undefined}
+                          />
+                        )}
                         </View>
                         <View style={styles.interactionRiskGroupsWrapper}>
                         <InteractionRiskGroups
-                          dangerousCount={selectedId && FAMILY_INTERACTION_DATA[selectedId] ? FAMILY_INTERACTION_DATA[selectedId].dangerousCount : INTERACTION_DATA.dangerousCount}
-                          safeCount={selectedId && FAMILY_INTERACTION_DATA[selectedId] ? FAMILY_INTERACTION_DATA[selectedId].safeCount : INTERACTION_DATA.safeCount}
+                          dangerousCount={drugInteractionData ? drugInteractionData.collisionCount : 0}
+                          safeCount={drugInteractionData ? (drugInteractionData.count - drugInteractionData.collisionCount) : 0}
                         />
+                        {riskDataError && (
+                          <Text style={styles.errorText}>
+                            {riskDataError.includes('등록') ? 
+                              '약물을 등록하면 상호작용을 분석해드려요' : 
+                              riskDataError
+                            }
+                          </Text>
+                        )}
+                        {drugInteractionData && drugInteractionData.duplicateCount > 0 && (
+                          <Text style={styles.warningText}>
+                            중복 성분 {drugInteractionData.duplicateCount}개 발견
+                          </Text>
+                        )}
                         </View>
                     </View>
                 </View>
@@ -161,7 +254,7 @@ export default function Index() {
             <View style={styles.sectionContainer}>
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>영양제 추천</Text>
-                    <Text style={styles.sectionSubtitle}>{USER_NAME}님을 위한 맞춤 건강 정보</Text>
+                    <Text style={styles.sectionSubtitle}>{userName}님을 위한 맞춤 건강 정보</Text>
                 </View>
                 {latestArticles.map((article, index) => (
                     <TouchableOpacity 
@@ -410,5 +503,30 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.primary,
     fontWeight: 'bold',
+  },
+  loadingGauge: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    fontSize: 12,
+    color: Colors.mediumGray,
+    fontWeight: '500',
+  },
+  errorText: {
+    fontSize: 12,
+    color: Colors.danger,
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
+  warningText: {
+    fontSize: 12,
+    color: '#F59E0B',
+    marginTop: 4,
+    fontWeight: '500',
   },
 });

@@ -20,6 +20,41 @@ function RootLayoutNav() {
       const shouldShowOnboarding = onboardingCompleted !== "true";
       setShowOnboarding(shouldShowOnboarding);
 
+      // 인증 토큰 확인 및 기본 로그인
+      const token = await AsyncStorage.getItem('access_token');
+      if (!token) {
+        // 토큰이 없으면 test1 계정으로 기본 로그인 시도 (실제로는 email 필드 사용)
+        const loginAttempts = [
+          { email: 'test1', password: '1234' }
+        ];
+        
+        for (const credentials of loginAttempts) {
+          try {
+            console.log('Trying login with:', credentials.phone);
+            const response = await fetch('https://pillink-backend-production.up.railway.app/auth/login', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(credentials)
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              await AsyncStorage.setItem('access_token', data.accessToken);
+              console.log('Default login successful with:', credentials.phone);
+              break; // 성공하면 루프 종료
+            } else {
+              const errorText = await response.text();
+              console.log('Login attempt failed for', credentials.phone, ':', response.status, response.statusText);
+              console.log('Error response:', errorText);
+            }
+          } catch (error) {
+            console.error('Login attempt error for', credentials.phone, ':', error);
+          }
+        }
+      }
+
       // 온보딩 상태에 따라 네비게이션
       if (shouldShowOnboarding && segments[0] !== "onboarding") {
         router.replace("/onboarding");
