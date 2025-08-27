@@ -178,7 +178,7 @@ AI 기반 약물 상호작용 분석과 보호자-대상자 실시간 연동을 
 
 ### 🏠 홈
 <div align="center">
-  <img src="../screenshots/home.png" width="30%" alt="홈">
+  <img src="/screenshots/home.png" width="30%" alt="홈">
 </div>
 
 ### 📈 리포트
